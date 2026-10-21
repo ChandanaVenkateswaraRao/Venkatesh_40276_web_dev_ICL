@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
   email: {
     type: String,
     required: true,
@@ -9,7 +13,22 @@ const UserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-  }
+  },
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  role: {
+    type: String,
+    enum: ['user', 'theater_owner', 'admin'],
+    default: 'user',
+  },
+  theaterId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Theater',
+  },
+  otp: String,
+  otpExpires: Date,
 });
 
 module.exports = mongoose.model('User', UserSchema);

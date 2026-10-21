@@ -20,7 +20,14 @@ const MovieSchema = new mongoose.Schema({
   rating: {
     type: Number,
     required: true,
-  }
+  },
+  trailerUrl: {
+    type: String,
+    default: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+  },
+  cities: [{
+    type: String
+  }]
 });
 
 module.exports = mongoose.model('Movie', MovieSchema);
