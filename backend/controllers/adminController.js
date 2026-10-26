@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const Booking = require('../models/Booking');
 const Movie = require('../models/Movie');
@@ -70,12 +71,30 @@ const getAnalytics = async (req, res, next) => {
 // 4. Validate Ticket from QR Code scanner
 const validateTicket = async (req, res, next) => {
   try {
-    const { paymentId } = req.body;
+    const { paymentId, ticketId } = req.body;
+    const identifier = String(paymentId || ticketId || '').replace(/^TICKET:/i, '').trim();
 
-    const booking = await Booking.findOne({ paymentId })
-      .populate('movie')
-      .populate('user', 'email name')
-      .populate({ path: 'showtime', populate: { path: 'theaterId' } });
+    if (!identifier) {
+      return res.status(400).json({ success: false, msg: 'Ticket QR code or reference is required' });
+    }
+
+    let booking = null;
+
+    // Check if identifier is a MongoDB ObjectId (as encoded in customer QR codes: TICKET:<booking._id>)
+    if (mongoose.Types.ObjectId.isValid(identifier) && identifier.length === 24) {
+      booking = await Booking.findById(identifier)
+        .populate('movie')
+        .populate('user', 'email name phone')
+        .populate({ path: 'showtime', populate: { path: 'theaterId' } });
+    }
+
+    // Fallback: Check if identifier is a paymentId (e.g. pay_xxx or WALLET_xxx)
+    if (!booking) {
+      booking = await Booking.findOne({ paymentId: identifier })
+        .populate('movie')
+        .populate('user', 'email name phone')
+        .populate({ path: 'showtime', populate: { path: 'theaterId' } });
+    }
 
     if (!booking) {
       return res.status(404).json({ success: false, msg: 'Ticket not found or invalid' });

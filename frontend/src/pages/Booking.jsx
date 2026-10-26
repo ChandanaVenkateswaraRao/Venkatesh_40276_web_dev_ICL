@@ -5,6 +5,7 @@ import { ChevronLeft, Clock, Users, ShieldAlert, Sparkles, Armchair, CheckCircle
 import FoodAndBeverageModal from '../components/FoodAndBeverageModal';
 import TicketPassModal from '../components/TicketPassModal';
 import getSocket from '../utils/socket';
+import { API_BASE_URL } from '../api/config';
 
 const Booking = () => {
   const { id } = useParams(); // showtimeId
@@ -63,7 +64,7 @@ const Booking = () => {
 
   const fetchBookedSeats = useCallback(async () => {
     try {
-      const bookedRes = await axios.get(`http://localhost:5000/api/theaters/showtime/${id}/booked-seats`);
+      const bookedRes = await axios.get(`${API_BASE_URL}/theaters/showtime/${id}/booked-seats`);
       setBookedSeats(bookedRes.data);
     } catch (err) {
       console.error(err);
@@ -203,8 +204,8 @@ const Booking = () => {
     const fetchShowtimeData = async () => {
       try {
         const [showRes, bookedRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/theaters/showtime/${id}`),
-          axios.get(`http://localhost:5000/api/theaters/showtime/${id}/booked-seats`)
+          axios.get(`${API_BASE_URL}/theaters/showtime/${id}`),
+          axios.get(`${API_BASE_URL}/theaters/showtime/${id}/booked-seats`)
         ]);
         setShowtime(showRes.data);
         setMovie(showRes.data.movieId);
@@ -217,7 +218,7 @@ const Booking = () => {
 
     // Fetch user wallet balance
     if (token) {
-      axios.get('http://localhost:5000/api/wallet/balance', {
+      axios.get(`${API_BASE_URL}/wallet/balance`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => {
@@ -289,7 +290,7 @@ const Booking = () => {
       try {
         const headers = { Authorization: `Bearer ${token}` };
         const res = await axios.post(
-          'http://localhost:5000/api/payment/pay-with-wallet',
+          `${API_BASE_URL}/payment/pay-with-wallet`,
           {
             movieId: movie._id,
             showtimeId: id,
@@ -326,7 +327,7 @@ const Booking = () => {
 
     try {
       // Create Razorpay Order for the remaining finalPayable amount
-      const orderRes = await axios.post('http://localhost:5000/api/payment/orders', {
+      const orderRes = await axios.post(`${API_BASE_URL}/payment/orders`, {
         amount: finalPayable
       });
       const order = orderRes.data.data;
@@ -334,7 +335,7 @@ const Booking = () => {
       // Fetch logged in user profile for prefilling
       let userProfile = null;
       try {
-        const profileRes = await axios.get('http://localhost:5000/api/auth/profile', {
+        const profileRes = await axios.get(`${API_BASE_URL}/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         userProfile = profileRes.data.user;
@@ -366,7 +367,7 @@ const Booking = () => {
             };
 
             const headers = { Authorization: `Bearer ${token}` };
-            const verifyRes = await axios.post('http://localhost:5000/api/payment/verify', payload, { headers });
+            const verifyRes = await axios.post(`${API_BASE_URL}/payment/verify`, payload, { headers });
 
             setConfirmedBooking(verifyRes.data.booking);
             if (verifyRes.data.walletBalance !== undefined) {

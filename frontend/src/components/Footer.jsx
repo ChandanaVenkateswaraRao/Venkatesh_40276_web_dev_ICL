@@ -9,7 +9,8 @@ const Footer = () => {
     location.pathname === '/login' || 
     location.pathname === '/register' ||
     location.pathname.startsWith('/partner') ||
-    location.pathname.startsWith('/theater')
+    location.pathname.startsWith('/theater') ||
+    location.pathname.startsWith('/admin')
   ) {
     return null;
   }

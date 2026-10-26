@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { API_BASE_URL } from '../api/config';
 import { 
   Ticket, 
   Printer, 
@@ -57,7 +58,7 @@ const Profile = () => {
         return;
       }
       try {
-        const res = await axios.get('http://localhost:5000/api/auth/profile', {
+        const res = await axios.get(`${API_BASE_URL}/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setProfile(res.data);
@@ -97,7 +98,7 @@ const Profile = () => {
     const token = localStorage.getItem('token');
     try {
       const res = await axios.put(
-        'http://localhost:5000/api/auth/profile',
+        `${API_BASE_URL}/auth/profile`,
         { name: nameInput },
         { headers: { Authorization: `Bearer ${token}` } }
       );

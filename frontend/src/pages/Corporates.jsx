@@ -37,8 +37,9 @@ import {
 } from 'lucide-react';
 import { useLocationContext } from '../context/LocationContext';
 import { getSocket } from '../utils/socket';
+import { API_BASE_URL } from '../api/config';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = API_BASE_URL;
 
 const Corporates = () => {
   const { city: globalCity, setCity: setGlobalCity } = useLocationContext();

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Building2, Film, CheckCircle, ArrowRight, ShieldCheck, Key, Lock, Info, Sparkles } from 'lucide-react';
+import { API_BASE_URL } from '../../api/config';
 
 const PartnerLogin = () => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ const PartnerLogin = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/partner/login', loginForm);
+      const res = await axios.post(`${API_BASE_URL}/auth/partner/login`, loginForm);
       localStorage.setItem('partner_token', res.data.token);
       localStorage.setItem('partner_user', JSON.stringify(res.data.user));
       navigate('/partner/dashboard');
@@ -134,26 +135,26 @@ const PartnerLogin = () => {
               <div className="space-y-2">
                 <button
                   type="button"
-                  onClick={() => fillDemo('owner@ambcinemas.com', 'password123')}
-                  className="w-full py-2.5 px-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl text-xs font-medium text-gray-700 flex items-center justify-between transition-colors cursor-pointer text-left"
+                  onClick={() => fillDemo('99230040276@klu.ac.in', 'password123')}
+                  className="w-full py-2.5 px-3 bg-pink-50/50 hover:bg-pink-50 border border-pink-200/80 rounded-xl text-xs font-medium text-gray-700 flex items-center justify-between transition-colors cursor-pointer text-left"
                 >
                   <div>
-                    <span className="font-bold text-[#F84464] block">AMB Cinemas: Gachibowli</span>
-                    <span className="text-gray-400 text-[10px]">owner@ambcinemas.com</span>
+                    <span className="font-bold text-[#F84464] block">Asian Cinemas: Hyderabad</span>
+                    <span className="text-gray-500 text-[10px]">99230040276@klu.ac.in</span>
                   </div>
-                  <span className="text-[10px] font-semibold bg-white border border-gray-200 px-2 py-1 rounded-md text-gray-600">
-                    Auto-Fill
+                  <span className="text-[10px] font-bold bg-[#F84464] text-white px-2 py-1 rounded-md">
+                    Live Partner
                   </span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => fillDemo('partner@prasads.com', 'password123')}
+                  onClick={() => fillDemo('owner@ambcinemas.com', 'password123')}
                   className="w-full py-2.5 px-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl text-xs font-medium text-gray-700 flex items-center justify-between transition-colors cursor-pointer text-left"
                 >
                   <div>
-                    <span className="font-bold text-[#F84464] block">Prasads Multiplex: Necklace Road</span>
-                    <span className="text-gray-400 text-[10px]">partner@prasads.com</span>
+                    <span className="font-bold text-gray-800 block">AMB Cinemas: Gachibowli</span>
+                    <span className="text-gray-400 text-[10px]">owner@ambcinemas.com</span>
                   </div>
                   <span className="text-[10px] font-semibold bg-white border border-gray-200 px-2 py-1 rounded-md text-gray-600">
                     Auto-Fill

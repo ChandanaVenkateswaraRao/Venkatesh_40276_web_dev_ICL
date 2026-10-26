@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Star, Share2, ChevronRight, X, Play } from 'lucide-react';
+import { API_BASE_URL } from '../api/config';
 
 const Movie = () => {
   const { id } = useParams();
@@ -24,8 +25,8 @@ const Movie = () => {
     const fetchData = async () => {
       try {
         const [movieRes, reviewsRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/movies/${id}`),
-          axios.get(`http://localhost:5000/api/movies/${id}/reviews`)
+          axios.get(`${API_BASE_URL}/movies/${id}`),
+          axios.get(`${API_BASE_URL}/movies/${id}/reviews`)
         ]);
         setMovie(movieRes.data);
         setReviews(reviewsRes.data);
@@ -42,7 +43,7 @@ const Movie = () => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const payload = { rating, text: reviewText };
-      const res = await axios.post(`http://localhost:5000/api/movies/${id}/reviews`, payload, { headers });
+      const res = await axios.post(`${API_BASE_URL}/movies/${id}/reviews`, payload, { headers });
       setReviews([res.data, ...reviews]);
       setIsReviewModalOpen(false);
       setReviewText('');

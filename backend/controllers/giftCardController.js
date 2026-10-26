@@ -99,7 +99,7 @@ const verifyGiftCardPurchase = async (req, res, next) => {
       recipientName: recipientName || 'Valued Customer',
       recipientEmail: recipientEmail || '',
       senderName: senderName || 'A Well-Wisher',
-      message: message || 'Enjoy the movies and entertainment on me! 🍿',
+      message: message || 'Enjoy the movies and entertainment on me.',
       purchasedBy: userId || null,
       razorpayOrderId: razorpay_order_id,
       razorpayPaymentId: razorpay_payment_id,
@@ -266,7 +266,7 @@ const redeemGiftCard = async (req, res, next) => {
 
       return res.status(200).json({
         success: true,
-        message: `🎉 ₹${creditedAmount} credited successfully to your BookMyShow wallet!`,
+        message: `₹${creditedAmount} credited successfully to your BookMyShow wallet.`,
         creditedAmount,
         walletBalance: user.walletBalance,
         transaction
@@ -319,7 +319,7 @@ const redeemGiftCard = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: `🎉 ₹${redeemAmount} credited successfully to your BookMyShow wallet!`,
+      message: `₹${redeemAmount} credited successfully to your BookMyShow wallet.`,
       creditedAmount: redeemAmount,
       walletBalance: user.walletBalance,
       transaction

@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
   Building2, Film, Plus, Edit2, Trash2, DollarSign, Calendar, Clock, 
   LogOut, CheckCircle, Search, Sparkles, X, Ticket, Radio, Armchair,
-  Tv, Layers
+  Tv, Layers, QrCode
 } from 'lucide-react';
 import getSocket from '../../utils/socket';
 import { playLiveBookingChime } from '../../utils/audio';
+import { API_BASE_URL } from '../../api/config';
+import TicketGateScanner from '../../components/TicketGateScanner';
 
 const PROJECTION_FORMATS = [
   'Standard 2D',
@@ -24,8 +26,9 @@ const PROJECTION_FORMATS = [
   'IMAX 2D'
 ];
 
-const PartnerDashboard = () => {
+const PartnerDashboard = ({ defaultTab }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem('partner_token');
   const storedUser = localStorage.getItem('partner_user');
 
@@ -33,9 +36,18 @@ const PartnerDashboard = () => {
   const [showtimes, setShowtimes] = useState([]);
   const [moviesList, setMoviesList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('shows'); // 'shows' | 'floor_map' | 'add_movie'
+  const [activeTab, setActiveTab] = useState(defaultTab || 'shows'); // 'shows' | 'floor_map' | 'add_movie' | 'scanner'
   const [searchQuery, setSearchQuery] = useState('');
   const [liveAlerts, setLiveAlerts] = useState([]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    } else if (params.get('tab') === 'scanner' || location.pathname.includes('/scanner')) {
+      setActiveTab('scanner');
+    }
+  }, [location, defaultTab]);
 
   // Floor Map Real-Time State
   const [selectedFloorShowtimeId, setSelectedFloorShowtimeId] = useState('');
@@ -98,9 +110,9 @@ const PartnerDashboard = () => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [theaterRes, showtimesRes, moviesRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/theaters/partner/my-theater', { headers }),
-        axios.get('http://localhost:5000/api/theaters/partner/showtimes', { headers }),
-        axios.get('http://localhost:5000/api/movies?all=true')
+        axios.get(`${API_BASE_URL}/theaters/partner/my-theater`, { headers }),
+        axios.get(`${API_BASE_URL}/theaters/partner/showtimes`, { headers }),
+        axios.get(`${API_BASE_URL}/movies?all=true`)
       ]);
 
       setPartnerData(theaterRes.data);
@@ -137,7 +149,7 @@ const PartnerDashboard = () => {
 
     const fetchFloorSeats = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/theaters/showtime/${selectedFloorShowtimeId}/booked-seats`);
+        const res = await axios.get(`${API_BASE_URL}/theaters/showtime/${selectedFloorShowtimeId}/booked-seats`);
         setFloorBookedSeats(res.data);
       } catch (err) {
         console.error(err);
@@ -253,7 +265,7 @@ const PartnerDashboard = () => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const res = await axios.put(
-        `http://localhost:5000/api/theaters/partner/showtimes/${editingShowtime._id}/price`,
+        `${API_BASE_URL}/theaters/partner/showtimes/${editingShowtime._id}/price`,
         priceForm,
         { headers }
       );
@@ -275,7 +287,7 @@ const PartnerDashboard = () => {
     e.preventDefault();
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.post('http://localhost:5000/api/theaters/partner/showtimes', showForm, { headers });
+      const res = await axios.post(`${API_BASE_URL}/theaters/partner/showtimes`, showForm, { headers });
       setShowtimes([res.data, ...showtimes]);
       setIsAddShowModalOpen(false);
       setSuccessMessage('New showtime scheduled successfully!');
@@ -290,7 +302,7 @@ const PartnerDashboard = () => {
     if (!window.confirm('Are you sure you want to cancel and remove this showtime?')) return;
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.delete(`http://localhost:5000/api/theaters/partner/showtimes/${id}`, { headers });
+      await axios.delete(`${API_BASE_URL}/theaters/partner/showtimes/${id}`, { headers });
       setShowtimes(prev => prev.filter(s => s._id !== id));
       setSuccessMessage('Showtime removed.');
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -305,7 +317,7 @@ const PartnerDashboard = () => {
     setMovieSubmitting(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.post('http://localhost:5000/api/theaters/partner/add-movie', movieForm, { headers });
+      const res = await axios.post(`${API_BASE_URL}/theaters/partner/add-movie`, movieForm, { headers });
       setMoviesList([res.data, ...moviesList]);
       setMovieForm({
         title: '',
@@ -423,6 +435,19 @@ const PartnerDashboard = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setActiveTab('scanner')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer border ${
+                activeTab === 'scanner'
+                  ? 'bg-[#F84464] text-white border-[#F84464]'
+                  : 'bg-gray-800 text-gray-200 border-gray-700 hover:bg-gray-700 hover:text-white'
+              }`}
+              title="Open Ticket Gate Scanner"
+            >
+              <QrCode className="w-3.5 h-3.5 text-pink-400" />
+              <span>Gate Scanner</span>
+            </button>
+
             <div className="text-right hidden sm:block">
               <p className="text-xs font-semibold">{theater?.owner?.name || 'Owner Portal'}</p>
               <p className="text-[10px] text-gray-400">{theater?.city}</p>
@@ -538,6 +563,21 @@ const PartnerDashboard = () => {
             >
               <Sparkles className="w-4 h-4 text-amber-500" />
               <span>Add a New Movie</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('scanner')}
+              className={`pb-3 text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'scanner'
+                  ? 'border-b-2 border-[#F84464] text-[#F84464]'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              <QrCode className="w-4 h-4 text-[#F84464]" />
+              <span>Gate Scanner</span>
+              <span className="bg-rose-50 text-[#F84464] border border-rose-200 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                Camera QR
+              </span>
             </button>
           </div>
 
@@ -997,6 +1037,13 @@ const PartnerDashboard = () => {
                 {movieSubmitting ? 'Publishing Movie...' : 'Publish Movie to Theater Catalog'}
               </button>
             </form>
+          </div>
+        )}
+
+        {/* 5. TAB 4: GATE SECURITY & QR CAMERA SCANNER */}
+        {activeTab === 'scanner' && (
+          <div className="animate-fade-in">
+            <TicketGateScanner userRole="partner" currentTheater={theater} />
           </div>
         )}
 

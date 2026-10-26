@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../../api/config';
 import { 
   Film, Plus, Calendar, Clock, Building2, CheckCircle, AlertCircle, 
   Sparkles, Layers, Tv, Star, RefreshCw, Eye, EyeOff 
@@ -52,8 +53,8 @@ const Addshow = () => {
     try {
       setLoadingData(true);
       const [moviesRes, theatersRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/movies?all=true'),
-        axios.get('http://localhost:5000/api/admin/theaters')
+        axios.get(`${API_BASE_URL}/movies?all=true`),
+        axios.get(`${API_BASE_URL}/admin/theaters`)
       ]);
       setMovies(moviesRes.data);
       setTheaters(theatersRes.data);
@@ -167,7 +168,7 @@ const Addshow = () => {
         };
       }
 
-      const res = await axios.post('http://localhost:5000/api/movies', payload);
+      const res = await axios.post(`${API_BASE_URL}/movies`, payload);
 
       setAlertBanner({
         type: 'success',
@@ -205,7 +206,7 @@ const Addshow = () => {
     setAlertBanner(null);
 
     try {
-      await axios.post('http://localhost:5000/api/admin/add-show', scheduleForm);
+      await axios.post(`${API_BASE_URL}/admin/add-show`, scheduleForm);
       const chosenMovie = movies.find(m => m._id === scheduleForm.movieId);
       const chosenTheater = theaters.find(t => t._id === scheduleForm.theaterId);
 
@@ -532,7 +533,7 @@ const Addshow = () => {
                 </div>
               ) : (
                 <p className="text-[11px] text-gray-500 pl-7">
-                  ℹ️ If you do not schedule an initial showtime now, this movie will remain unlisted on user screens until a partner theater schedules showtimes for it.
+                  Note: If you do not schedule an initial showtime now, this movie will remain unlisted on user screens until a partner theater schedules showtimes for it.
                 </p>
               )}
             </div>
@@ -698,7 +699,7 @@ const Addshow = () => {
             </div>
 
             <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-800 font-medium">
-              💡 Publishing this showtime will immediately link the movie to <strong>{scheduleSelectedTheater?.name || 'this theater'}</strong> and make it visible on the BookMyShow user screen in <strong>{scheduleSelectedTheater?.city || 'the selected city'}</strong>!
+              Publishing this showtime will immediately link the movie to <strong>{scheduleSelectedTheater?.name || 'this theater'}</strong> and make it visible on the BookMyShow user screen in <strong>{scheduleSelectedTheater?.city || 'the selected city'}</strong>.
             </div>
 
             <button

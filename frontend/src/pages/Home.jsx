@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { ChevronRight, Star, Film } from 'lucide-react';
 import { useLocationContext } from '../context/LocationContext';
+import { API_BASE_URL } from '../api/config';
 
 const Home = () => {
   const [movies, setMovies] = useState([]);
@@ -13,7 +14,7 @@ const Home = () => {
     const fetchMovies = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`http://localhost:5000/api/movies?city=${city}`);
+        const res = await axios.get(`${API_BASE_URL}/movies?city=${city}`);
         setMovies(res.data);
       } catch (err) {
         console.error(err);

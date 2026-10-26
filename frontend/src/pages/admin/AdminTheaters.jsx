@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../../api/config';
 import { 
   Building2, Plus, Search, MapPin, ShieldCheck, Key, Edit2, Trash2, 
   CheckCircle, X, AlertCircle, Copy, ExternalLink, Ticket, Users, RefreshCw,
@@ -81,7 +82,7 @@ const AdminTheaters = () => {
   const fetchTheaters = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:5000/api/admin/theaters');
+      const res = await axios.get(`${API_BASE_URL}/admin/theaters`);
       setTheaters(res.data);
     } catch (err) {
       console.error('Error fetching theaters:', err);
@@ -319,7 +320,7 @@ const AdminTheaters = () => {
     setSubmitting(true);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/admin/theaters', registerForm);
+      const res = await axios.post(`${API_BASE_URL}/admin/theaters`, registerForm);
       setSuccessBanner({
         theaterName: res.data.theater.name,
         email: registerForm.ownerEmail,
@@ -358,7 +359,7 @@ const AdminTheaters = () => {
   const handleUpdateTheater = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/admin/theaters/${editingTheater._id}`, editForm);
+      await axios.put(`${API_BASE_URL}/admin/theaters/${editingTheater._id}`, editForm);
       setEditingTheater(null);
       fetchTheaters();
     } catch (err) {
@@ -407,7 +408,7 @@ const AdminTheaters = () => {
     }
     setPasswordResetting(true);
     try {
-      await axios.post(`http://localhost:5000/api/admin/theaters/${passwordModalTheater._id}/reset-password`, {
+      await axios.post(`${API_BASE_URL}/admin/theaters/${passwordModalTheater._id}/reset-password`, {
         newPassword
       });
       alert(`Password successfully updated for ${passwordModalTheater.owner?.email || 'partner'}`);
@@ -426,7 +427,7 @@ const AdminTheaters = () => {
       return;
     }
     try {
-      await axios.delete(`http://localhost:5000/api/admin/theaters/${id}`);
+      await axios.delete(`${API_BASE_URL}/admin/theaters/${id}`);
       fetchTheaters();
     } catch (err) {
       alert('Failed to delete theater');
@@ -710,8 +711,9 @@ const AdminTheaters = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded inline-block">
-                          ⚠️ No Partner Assigned
+                        <div className="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 font-medium border border-amber-200/60">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          <span>No Partner Assigned</span>
                         </div>
                       )}
                     </td>

@@ -47,8 +47,10 @@ function App() {
           {/* Theater Partner Portal Routes */}
           <Route path="/partner/login" element={<PartnerLogin />} />
           <Route path="/partner/dashboard" element={<PartnerDashboard />} />
+          <Route path="/partner/scanner" element={<PartnerDashboard defaultTab="scanner" />} />
           <Route path="/theater/login" element={<PartnerLogin />} />
           <Route path="/theater/dashboard" element={<PartnerDashboard />} />
+          <Route path="/theater/scanner" element={<PartnerDashboard defaultTab="scanner" />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>

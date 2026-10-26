@@ -4,6 +4,7 @@ import axios from 'axios';
 import { ChevronDown, Info, Heart, Search, X, Utensils, Smartphone, Moon, Sun, ArrowLeft } from 'lucide-react';
 import { useLocationContext } from '../context/LocationContext';
 import SeatQuantityModal from '../components/SeatQuantityModal';
+import { API_BASE_URL } from '../api/config';
 
 const Theaters = () => {
   const { id } = useParams(); // movieId
@@ -66,8 +67,8 @@ const Theaters = () => {
       setLoading(true);
       try {
         const [movieRes, theatersRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/movies/${id}`),
-          axios.get(`http://localhost:5000/api/theaters/${id}/showtimes?city=${city}&date=${selectedDate?.fullDate}`)
+          axios.get(`${API_BASE_URL}/movies/${id}`),
+          axios.get(`${API_BASE_URL}/theaters/${id}/showtimes?city=${city}&date=${selectedDate?.fullDate}`)
         ]);
         setMovie(movieRes.data);
         setTheatersData(theatersRes.data);

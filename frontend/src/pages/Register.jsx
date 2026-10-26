@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, User, ShieldCheck } from 'lucide-react';
+import { API_BASE_URL } from '../api/config';
 
 const Register = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -23,7 +24,7 @@ const Register = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', formData);
+      const res = await axios.post(`${API_BASE_URL}/auth/register`, formData);
       if (res.data.requireOtp) {
         setOtpSent(true);
       }
@@ -39,7 +40,7 @@ const Register = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/verify-otp', { email: formData.email, otp });
+      const res = await axios.post(`${API_BASE_URL}/auth/verify-otp`, { email: formData.email, otp });
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify({ name: formData.name, email: formData.email }));
       navigate('/');

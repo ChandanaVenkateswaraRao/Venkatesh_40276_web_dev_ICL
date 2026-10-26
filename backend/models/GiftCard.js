@@ -38,7 +38,7 @@ const GiftCardSchema = new mongoose.Schema({
   },
   message: {
     type: String,
-    default: 'Enjoy the movies and entertainment on me! 🍿',
+    default: 'Enjoy the movies and entertainment on me.',
   },
   quantity: {
     type: Number,

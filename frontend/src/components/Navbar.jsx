@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, ChevronDown, Menu, User, Building2 } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE_URL } from '../api/config';
 import { useLocationContext } from '../context/LocationContext';
 import LocationModal from './LocationModal';
 
@@ -37,7 +38,7 @@ const Navbar = () => {
     
     const delayDebounceFn = setTimeout(async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/movies?search=${searchQuery}&city=${city}`);
+        const res = await axios.get(`${API_BASE_URL}/movies?search=${searchQuery}&city=${city}`);
         setSearchResults(res.data);
         setIsSearchOpen(true);
       } catch (err) {
@@ -48,12 +49,13 @@ const Navbar = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, city]);
 
-  // Hide on login, register, and partner portal pages
+  // Hide on login, register, partner portal, and admin portal pages
   if (
     location.pathname === '/login' || 
     location.pathname === '/register' ||
     location.pathname.startsWith('/partner') ||
-    location.pathname.startsWith('/theater')
+    location.pathname.startsWith('/theater') ||
+    location.pathname.startsWith('/admin')
   ) {
     return null;
   }
