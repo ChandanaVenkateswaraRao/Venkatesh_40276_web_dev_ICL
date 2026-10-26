@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Building2, Plus, Search, MapPin, ShieldCheck, Key, Edit2, Trash2, 
-  CheckCircle, X, AlertCircle, Copy, ExternalLink, Ticket, Users, RefreshCw
+  CheckCircle, X, AlertCircle, Copy, ExternalLink, Ticket, Users, RefreshCw,
+  Layers, Tv, Minus, Film
 } from 'lucide-react';
 
 const POPULAR_AMENITIES = [
@@ -16,6 +17,17 @@ const POPULAR_AMENITIES = [
 ];
 
 const CITIES = ['Hyderabad', 'Bengaluru', 'Mumbai', 'Delhi-NCR', 'Chennai', 'Pune', 'Kolkata', 'Ahmedabad', 'Kochi'];
+
+const SCREEN_TYPES = [
+  'Standard 2D',
+  'Dolby Atmos',
+  'IMAX 4K Laser',
+  '4DX 3D',
+  'INSIGNIA / Gold Class Recliner',
+  '4K Barco Laser',
+  'Onyx Cinema LED',
+  'ScreenX (270° Panoramic)'
+];
 
 const AdminTheaters = () => {
   const [theaters, setTheaters] = useState([]);
@@ -33,6 +45,12 @@ const AdminTheaters = () => {
     name: '',
     city: 'Hyderabad',
     location: '',
+    theaterType: 'multiplex', // 'single_screen' | 'multiplex'
+    screens: [
+      { screenNumber: 1, name: 'Audi 1', screenType: 'Dolby Atmos', capacity: 200 },
+      { screenNumber: 2, name: 'Audi 2', screenType: '4K Barco Laser', capacity: 180 },
+      { screenNumber: 3, name: 'Audi 3', screenType: 'IMAX 4K Laser', capacity: 250 }
+    ],
     cancellable: true,
     amenities: ['M-Ticket', 'Food & Beverage', 'Dolby Atmos'],
     ownerName: '',
@@ -46,6 +64,8 @@ const AdminTheaters = () => {
     name: '',
     city: 'Hyderabad',
     location: '',
+    theaterType: 'multiplex',
+    screens: [],
     cancellable: true,
     amenities: [],
     ownerName: '',
@@ -73,6 +93,198 @@ const AdminTheaters = () => {
   useEffect(() => {
     fetchTheaters();
   }, []);
+
+  // Handle theater type switch in registration
+  const handleRegisterTypeChange = (type) => {
+    if (type === 'single_screen') {
+      setRegisterForm(prev => ({
+        ...prev,
+        theaterType: 'single_screen',
+        screens: [
+          {
+            screenNumber: 1,
+            name: prev.screens[0]?.name || 'Main Screen',
+            screenType: prev.screens[0]?.screenType || 'Dolby Atmos',
+            capacity: prev.screens[0]?.capacity || 250
+          }
+        ]
+      }));
+    } else {
+      setRegisterForm(prev => {
+        let currentScreens = prev.screens;
+        if (!currentScreens || currentScreens.length <= 1) {
+          currentScreens = [
+            { screenNumber: 1, name: 'Audi 1', screenType: 'Dolby Atmos', capacity: 200 },
+            { screenNumber: 2, name: 'Audi 2', screenType: '4K Barco Laser', capacity: 180 },
+            { screenNumber: 3, name: 'Audi 3', screenType: 'IMAX 4K Laser', capacity: 250 }
+          ];
+        }
+        return {
+          ...prev,
+          theaterType: 'multiplex',
+          screens: currentScreens
+        };
+      });
+    }
+  };
+
+  // Set number of screens for multiplex
+  const handleRegisterScreenCountChange = (count) => {
+    const num = Math.max(2, Math.min(20, parseInt(count) || 2));
+    setRegisterForm(prev => {
+      const current = [...(prev.screens || [])];
+      if (current.length < num) {
+        for (let i = current.length + 1; i <= num; i++) {
+          current.push({
+            screenNumber: i,
+            name: `Audi ${i}`,
+            screenType: SCREEN_TYPES[(i - 1) % SCREEN_TYPES.length],
+            capacity: 200
+          });
+        }
+      } else if (current.length > num) {
+        current.splice(num);
+      }
+      return { ...prev, screens: current };
+    });
+  };
+
+  // Update specific screen in register form
+  const updateRegisterScreen = (index, field, value) => {
+    setRegisterForm(prev => {
+      const updated = [...prev.screens];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, screens: updated };
+    });
+  };
+
+  // Add a screen to register form
+  const addRegisterScreen = () => {
+    setRegisterForm(prev => {
+      const nextNum = (prev.screens?.length || 0) + 1;
+      return {
+        ...prev,
+        screens: [
+          ...(prev.screens || []),
+          {
+            screenNumber: nextNum,
+            name: `Audi ${nextNum}`,
+            screenType: SCREEN_TYPES[(nextNum - 1) % SCREEN_TYPES.length],
+            capacity: 200
+          }
+        ]
+      };
+    });
+  };
+
+  // Remove screen from register form
+  const removeRegisterScreen = (index) => {
+    setRegisterForm(prev => {
+      if (prev.screens.length <= 2) {
+        alert('A multiplex must have at least 2 screens. Switch to Single Screen if this is a single auditorium cinema.');
+        return prev;
+      }
+      const updated = prev.screens.filter((_, i) => i !== index).map((s, i) => ({
+        ...s,
+        screenNumber: i + 1
+      }));
+      return { ...prev, screens: updated };
+    });
+  };
+
+  // Handle edit theater type switch
+  const handleEditTypeChange = (type) => {
+    if (type === 'single_screen') {
+      setEditForm(prev => ({
+        ...prev,
+        theaterType: 'single_screen',
+        screens: [
+          {
+            screenNumber: 1,
+            name: prev.screens[0]?.name || 'Main Screen',
+            screenType: prev.screens[0]?.screenType || 'Dolby Atmos',
+            capacity: prev.screens[0]?.capacity || 250
+          }
+        ]
+      }));
+    } else {
+      setEditForm(prev => {
+        let currentScreens = prev.screens;
+        if (!currentScreens || currentScreens.length <= 1) {
+          currentScreens = [
+            { screenNumber: 1, name: 'Audi 1', screenType: 'Dolby Atmos', capacity: 200 },
+            { screenNumber: 2, name: 'Audi 2', screenType: '4K Barco Laser', capacity: 180 },
+            { screenNumber: 3, name: 'Audi 3', screenType: 'IMAX 4K Laser', capacity: 250 }
+          ];
+        }
+        return {
+          ...prev,
+          theaterType: 'multiplex',
+          screens: currentScreens
+        };
+      });
+    }
+  };
+
+  const handleEditScreenCountChange = (count) => {
+    const num = Math.max(2, Math.min(20, parseInt(count) || 2));
+    setEditForm(prev => {
+      const current = [...(prev.screens || [])];
+      if (current.length < num) {
+        for (let i = current.length + 1; i <= num; i++) {
+          current.push({
+            screenNumber: i,
+            name: `Audi ${i}`,
+            screenType: SCREEN_TYPES[(i - 1) % SCREEN_TYPES.length],
+            capacity: 200
+          });
+        }
+      } else if (current.length > num) {
+        current.splice(num);
+      }
+      return { ...prev, screens: current };
+    });
+  };
+
+  const updateEditScreen = (index, field, value) => {
+    setEditForm(prev => {
+      const updated = [...prev.screens];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, screens: updated };
+    });
+  };
+
+  const addEditScreen = () => {
+    setEditForm(prev => {
+      const nextNum = (prev.screens?.length || 0) + 1;
+      return {
+        ...prev,
+        screens: [
+          ...(prev.screens || []),
+          {
+            screenNumber: nextNum,
+            name: `Audi ${nextNum}`,
+            screenType: SCREEN_TYPES[(nextNum - 1) % SCREEN_TYPES.length],
+            capacity: 200
+          }
+        ]
+      };
+    });
+  };
+
+  const removeEditScreen = (index) => {
+    setEditForm(prev => {
+      if (prev.screens.length <= 2) {
+        alert('A multiplex must have at least 2 screens.');
+        return prev;
+      }
+      const updated = prev.screens.filter((_, i) => i !== index).map((s, i) => ({
+        ...s,
+        screenNumber: i + 1
+      }));
+      return { ...prev, screens: updated };
+    });
+  };
 
   // Handle amenity toggle in registration form
   const toggleAmenity = (amenity) => {
@@ -120,6 +332,12 @@ const AdminTheaters = () => {
         name: '',
         city: 'Hyderabad',
         location: '',
+        theaterType: 'multiplex',
+        screens: [
+          { screenNumber: 1, name: 'Audi 1', screenType: 'Dolby Atmos', capacity: 200 },
+          { screenNumber: 2, name: 'Audi 2', screenType: '4K Barco Laser', capacity: 180 },
+          { screenNumber: 3, name: 'Audi 3', screenType: 'IMAX 4K Laser', capacity: 250 }
+        ],
         cancellable: true,
         amenities: ['M-Ticket', 'Food & Beverage', 'Dolby Atmos'],
         ownerName: '',
@@ -151,10 +369,28 @@ const AdminTheaters = () => {
   // Open Edit Modal
   const openEditModal = (th) => {
     setEditingTheater(th);
+    const existingType = th.theaterType || (th.screens && th.screens.length === 1 ? 'single_screen' : 'multiplex');
+    const existingScreens = (th.screens && th.screens.length > 0)
+      ? th.screens.map(s => ({
+          screenNumber: s.screenNumber,
+          name: s.name,
+          screenType: s.screenType || 'Standard 2D',
+          capacity: s.capacity || 200
+        }))
+      : (existingType === 'single_screen'
+          ? [{ screenNumber: 1, name: 'Main Screen', screenType: 'Dolby Atmos', capacity: 250 }]
+          : [
+              { screenNumber: 1, name: 'Audi 1', screenType: 'Dolby Atmos', capacity: 200 },
+              { screenNumber: 2, name: 'Audi 2', screenType: '4K Barco Laser', capacity: 180 },
+              { screenNumber: 3, name: 'Audi 3', screenType: 'IMAX 4K Laser', capacity: 250 }
+            ]);
+
     setEditForm({
       name: th.name,
       city: th.city,
       location: th.location || '',
+      theaterType: existingType,
+      screens: existingScreens,
       cancellable: th.cancellable !== false,
       amenities: th.amenities || [],
       ownerName: th.owner?.name || '',
@@ -378,6 +614,7 @@ const AdminTheaters = () => {
                 <tr className="bg-gray-50 text-gray-500 font-semibold border-b border-gray-200 text-xs uppercase tracking-wider">
                   <th className="py-4 px-6">Theater & Location</th>
                   <th className="py-4 px-6">City</th>
+                  <th className="py-4 px-6">Screens & Formats</th>
                   <th className="py-4 px-6">Assigned Partner / Owner</th>
                   <th className="py-4 px-6">Amenities</th>
                   <th className="py-4 px-6">Showtimes</th>
@@ -395,11 +632,22 @@ const AdminTheaters = () => {
                         <MapPin className="w-3 h-3 text-gray-400" />
                         {t.location || `${t.name}, ${t.city}`}
                       </div>
-                      {t.cancellable && (
-                        <span className="inline-block mt-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded">
-                          Cancellable
-                        </span>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        {t.theaterType === 'single_screen' || (t.screens && t.screens.length === 1) ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded">
+                            <Tv className="w-3 h-3" /> Single Screen
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded">
+                            <Layers className="w-3 h-3" /> Multiplex ({t.screens?.length || 3} Screens)
+                          </span>
+                        )}
+                        {t.cancellable && (
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded">
+                            Cancellable
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* City */}
@@ -407,6 +655,37 @@ const AdminTheaters = () => {
                       <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md font-semibold text-xs">
                         {t.city}
                       </span>
+                    </td>
+
+                    {/* Screens & Formats */}
+                    <td className="py-4 px-6">
+                      {t.theaterType === 'single_screen' || (t.screens && t.screens.length === 1) ? (
+                        <div className="space-y-1">
+                          <span className="inline-block text-[11px] font-bold text-gray-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                            {t.screens?.[0]?.name || 'Main Screen'}
+                          </span>
+                          <div className="text-[11px] text-gray-500">
+                            <strong className="text-gray-700">{t.screens?.[0]?.screenType || 'Dolby Atmos'}</strong> • {t.screens?.[0]?.capacity || 250} seats
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5 max-w-xs">
+                          <div className="text-[11px] font-bold text-gray-700">
+                            {t.screens?.length || 0} Configured Audis:
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {(t.screens || []).map((s, idx) => (
+                              <span 
+                                key={idx}
+                                className="text-[10px] bg-slate-50 border border-slate-200 text-slate-700 px-1.5 py-0.5 rounded"
+                                title={`${s.name} (${s.screenType} • ${s.capacity} seats)`}
+                              >
+                                <strong>{s.name}</strong>: {s.screenType}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </td>
 
                     {/* Assigned Owner / Partner */}
@@ -494,7 +773,7 @@ const AdminTheaters = () => {
       {/* ======================================================== */}
       {isRegisterModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-100">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-100">
             
             {/* Modal Header */}
             <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-slate-50 rounded-t-2xl">
@@ -507,7 +786,7 @@ const AdminTheaters = () => {
                   Register New Cinema Theater
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Onboard theater onto QuickShow and create its partner login credentials.
+                  Onboard theater onto bookmyshow, configure auditorium screens, and create its partner login credentials.
                 </p>
               </div>
               <button 
@@ -580,6 +859,284 @@ const AdminTheaters = () => {
                       className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#F84464]"
                     />
                   </div>
+
+                  {/* Theater Type Selector */}
+                  <div className="sm:col-span-2 pt-2 pb-1 border-t border-gray-100">
+                    <label className="block text-xs font-bold text-gray-700 mb-2">
+                      Theater Format & Architecture *
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      
+                      {/* Option 1: Single Screen */}
+                      <div 
+                        onClick={() => handleRegisterTypeChange('single_screen')}
+                        className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                          registerForm.theaterType === 'single_screen'
+                            ? 'border-[#F84464] bg-rose-50/60 shadow-sm'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                      >
+                        <div className={`p-2 rounded-lg mt-0.5 ${
+                          registerForm.theaterType === 'single_screen'
+                            ? 'bg-[#F84464] text-white'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          <Tv className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-sm text-gray-900">Single Screen Cinema</span>
+                            <input 
+                              type="radio" 
+                              name="register_theater_type" 
+                              checked={registerForm.theaterType === 'single_screen'} 
+                              onChange={() => handleRegisterTypeChange('single_screen')}
+                              className="accent-[#F84464] cursor-pointer"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Standalone single auditorium hall with 1 primary screen.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Option 2: Multiplex */}
+                      <div 
+                        onClick={() => handleRegisterTypeChange('multiplex')}
+                        className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                          registerForm.theaterType === 'multiplex'
+                            ? 'border-[#F84464] bg-rose-50/60 shadow-sm'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                      >
+                        <div className={`p-2 rounded-lg mt-0.5 ${
+                          registerForm.theaterType === 'multiplex'
+                            ? 'bg-[#F84464] text-white'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          <Layers className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-sm text-gray-900">Multiplex Cinema</span>
+                            <input 
+                              type="radio" 
+                              name="register_theater_type" 
+                              checked={registerForm.theaterType === 'multiplex'} 
+                              onChange={() => handleRegisterTypeChange('multiplex')}
+                              className="accent-[#F84464] cursor-pointer"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Multi-screen entertainment complex with multiple distinct screens.
+                          </p>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Conditional Screen Configurations */}
+                  {registerForm.theaterType === 'single_screen' ? (
+                    /* Single Screen Config */
+                    <div className="sm:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
+                          <Tv className="w-4 h-4 text-[#F84464]" />
+                          Single Auditorium Screen Setup
+                        </span>
+                        <span className="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
+                          1 Auditorium
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-gray-600 mb-1">
+                            Screen / Hall Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={registerForm.screens[0]?.name || ''}
+                            onChange={(e) => updateRegisterScreen(0, 'name', e.target.value)}
+                            placeholder="e.g., Main Screen"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs outline-none focus:border-[#F84464]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-gray-600 mb-1">
+                            Projection & Sound Type *
+                          </label>
+                          <select
+                            value={registerForm.screens[0]?.screenType || 'Dolby Atmos'}
+                            onChange={(e) => updateRegisterScreen(0, 'screenType', e.target.value)}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs outline-none focus:border-[#F84464] cursor-pointer"
+                          >
+                            {SCREEN_TYPES.map(type => (
+                              <option key={type} value={type}>{type}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-gray-600 mb-1">
+                            Seating Capacity *
+                          </label>
+                          <input
+                            type="number"
+                            required
+                            min="50"
+                            max="3000"
+                            value={registerForm.screens[0]?.capacity || 250}
+                            onChange={(e) => updateRegisterScreen(0, 'capacity', parseInt(e.target.value) || 250)}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs outline-none focus:border-[#F84464]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Multiplex Config */
+                    <div className="sm:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-gray-200">
+                        <div>
+                          <span className="text-xs font-black uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
+                            <Layers className="w-4 h-4 text-[#F84464]" />
+                            Multiplex Screens Setup ({registerForm.screens?.length || 0} Screens)
+                          </span>
+                          <p className="text-[11px] text-gray-500">
+                            Specify number of screens and customize each auditorium's name, projection format, and capacity.
+                          </p>
+                        </div>
+
+                        {/* Screen Count Quick Stepper */}
+                        <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-gray-200 self-start sm:self-auto">
+                          <span className="text-[11px] font-bold text-gray-500 px-2">Total Screens:</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRegisterScreenCountChange((registerForm.screens?.length || 2) - 1)}
+                            disabled={(registerForm.screens?.length || 2) <= 2}
+                            className="w-7 h-7 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold disabled:opacity-40 cursor-pointer text-xs"
+                          >
+                            -
+                          </button>
+                          <span className="w-8 text-center text-xs font-black text-gray-900">
+                            {registerForm.screens?.length || 2}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRegisterScreenCountChange((registerForm.screens?.length || 2) + 1)}
+                            disabled={(registerForm.screens?.length || 2) >= 15}
+                            className="w-7 h-7 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold disabled:opacity-40 cursor-pointer text-xs"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Quick Screen Count Badges */}
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                        <span className="text-[10px] font-bold uppercase text-gray-400">Presets:</span>
+                        {[2, 3, 4, 5, 6, 8].map(count => (
+                          <button
+                            key={count}
+                            type="button"
+                            onClick={() => handleRegisterScreenCountChange(count)}
+                            className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                              registerForm.screens?.length === count
+                                ? 'bg-[#F84464] text-white shadow-xs'
+                                : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'
+                            }`}
+                          >
+                            {count} Screens
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* List of screens */}
+                      <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                        {registerForm.screens.map((screen, index) => (
+                          <div 
+                            key={index} 
+                            className="bg-white p-3 rounded-xl border border-gray-200 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center gap-2.5"
+                          >
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="w-6 h-6 rounded-full bg-rose-50 text-[#F84464] font-bold text-xs flex items-center justify-center border border-rose-100">
+                                {index + 1}
+                              </span>
+                              <span className="text-xs font-bold text-gray-800 hidden sm:inline">
+                                Screen {index + 1}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1 w-full">
+                              <div>
+                                <input
+                                  type="text"
+                                  required
+                                  value={screen.name}
+                                  onChange={(e) => updateRegisterScreen(index, 'name', e.target.value)}
+                                  placeholder={`e.g. Audi ${index + 1}`}
+                                  className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#F84464]"
+                                />
+                              </div>
+
+                              <div>
+                                <select
+                                  value={screen.screenType}
+                                  onChange={(e) => updateRegisterScreen(index, 'screenType', e.target.value)}
+                                  className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#F84464] bg-white cursor-pointer"
+                                >
+                                  {SCREEN_TYPES.map(type => (
+                                    <option key={type} value={type}>{type}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number"
+                                  required
+                                  min="30"
+                                  max="1500"
+                                  value={screen.capacity}
+                                  onChange={(e) => updateRegisterScreen(index, 'capacity', parseInt(e.target.value) || 200)}
+                                  placeholder="Capacity"
+                                  className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#F84464]"
+                                  title="Seating Capacity"
+                                />
+                                <span className="text-[10px] text-gray-400 font-semibold shrink-0">seats</span>
+                              </div>
+                            </div>
+
+                            {registerForm.screens.length > 2 && (
+                              <button
+                                type="button"
+                                onClick={() => removeRegisterScreen(index)}
+                                title="Remove Screen"
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0 self-end sm:self-center"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Add another screen button */}
+                      <div className="pt-1 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={addRegisterScreen}
+                          className="flex items-center gap-1 text-xs font-bold text-[#F84464] hover:text-[#d63451] hover:underline cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Add Another Screen to Multiplex
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Cancellation Policy */}
                   <div className="sm:col-span-2 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
@@ -729,12 +1286,17 @@ const AdminTheaters = () => {
       {/* ======================================================== */}
       {editingTheater && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-gray-100 p-6">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-100 p-6">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
-              <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                <Edit2 className="w-4 h-4 text-blue-600" />
-                Edit Theater Details
-              </h3>
+              <div>
+                <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <Edit2 className="w-4 h-4 text-blue-600" />
+                  Edit Theater & Screens Configuration
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Update theater properties, auditorium screens, formats, and amenities.
+                </p>
+              </div>
               <button onClick={() => setEditingTheater(null)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
@@ -742,7 +1304,7 @@ const AdminTheaters = () => {
 
             <form onSubmit={handleUpdateTheater} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Theater Name</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Theater Name *</label>
                 <input
                   type="text"
                   required
@@ -754,7 +1316,7 @@ const AdminTheaters = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">City</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">City *</label>
                   <select
                     value={editForm.city}
                     onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
@@ -773,6 +1335,211 @@ const AdminTheaters = () => {
                   />
                 </div>
               </div>
+
+              {/* Theater Type Selector in Edit */}
+              <div className="pt-2 pb-1 border-t border-gray-100">
+                <label className="block text-xs font-bold text-gray-700 mb-2">
+                  Theater Format & Architecture *
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  
+                  {/* Single Screen */}
+                  <div 
+                    onClick={() => handleEditTypeChange('single_screen')}
+                    className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                      editForm.theaterType === 'single_screen'
+                        ? 'border-blue-600 bg-blue-50/60 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-lg mt-0.5 ${
+                      editForm.theaterType === 'single_screen'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      <Tv className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-gray-900">Single Screen Cinema</span>
+                        <input 
+                          type="radio" 
+                          name="edit_theater_type" 
+                          checked={editForm.theaterType === 'single_screen'} 
+                          onChange={() => handleEditTypeChange('single_screen')}
+                          className="accent-blue-600 cursor-pointer"
+                        />
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        Single auditorium cinema hall.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Multiplex */}
+                  <div 
+                    onClick={() => handleEditTypeChange('multiplex')}
+                    className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                      editForm.theaterType === 'multiplex'
+                        ? 'border-blue-600 bg-blue-50/60 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-lg mt-0.5 ${
+                      editForm.theaterType === 'multiplex'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-gray-900">Multiplex Cinema</span>
+                        <input 
+                          type="radio" 
+                          name="edit_theater_type" 
+                          checked={editForm.theaterType === 'multiplex'} 
+                          onChange={() => handleEditTypeChange('multiplex')}
+                          className="accent-blue-600 cursor-pointer"
+                        />
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        Multiple screens / auditoriums.
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Edit Screens Setup */}
+              {editForm.theaterType === 'single_screen' ? (
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                      <Tv className="w-3.5 h-3.5 text-blue-600" />
+                      Single Screen Settings
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-600 mb-1">Screen Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editForm.screens?.[0]?.name || ''}
+                        onChange={(e) => updateEditScreen(0, 'name', e.target.value)}
+                        placeholder="e.g., Main Screen"
+                        className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-600 mb-1">Screen Type *</label>
+                      <select
+                        value={editForm.screens?.[0]?.screenType || 'Dolby Atmos'}
+                        onChange={(e) => updateEditScreen(0, 'screenType', e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs"
+                      >
+                        {SCREEN_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-600 mb-1">Capacity *</label>
+                      <input
+                        type="number"
+                        required
+                        min="50"
+                        max="3000"
+                        value={editForm.screens?.[0]?.capacity || 250}
+                        onChange={(e) => updateEditScreen(0, 'capacity', parseInt(e.target.value) || 250)}
+                        className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                    <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-blue-600" />
+                      Multiplex Screens ({editForm.screens?.length || 0})
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleEditScreenCountChange((editForm.screens?.length || 2) - 1)}
+                        disabled={(editForm.screens?.length || 2) <= 2}
+                        className="w-6 h-6 flex items-center justify-center rounded bg-gray-200 hover:bg-gray-300 text-xs font-bold disabled:opacity-40"
+                      >
+                        -
+                      </button>
+                      <span className="text-xs font-bold px-1.5">{editForm.screens?.length || 2}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleEditScreenCountChange((editForm.screens?.length || 2) + 1)}
+                        disabled={(editForm.screens?.length || 2) >= 15}
+                        className="w-6 h-6 flex items-center justify-center rounded bg-gray-200 hover:bg-gray-300 text-xs font-bold disabled:opacity-40"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                    {(editForm.screens || []).map((screen, index) => (
+                      <div key={index} className="bg-white p-2.5 rounded-lg border border-gray-200 flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 font-bold text-[11px] flex items-center justify-center shrink-0">
+                          {index + 1}
+                        </span>
+                        <input
+                          type="text"
+                          required
+                          value={screen.name}
+                          onChange={(e) => updateEditScreen(index, 'name', e.target.value)}
+                          placeholder={`Screen ${index + 1}`}
+                          className="w-1/3 px-2 py-1 border border-gray-200 rounded text-xs"
+                        />
+                        <select
+                          value={screen.screenType}
+                          onChange={(e) => updateEditScreen(index, 'screenType', e.target.value)}
+                          className="w-1/3 px-2 py-1 border border-gray-200 rounded text-xs bg-white"
+                        >
+                          {SCREEN_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                        <input
+                          type="number"
+                          required
+                          min="30"
+                          max="1500"
+                          value={screen.capacity}
+                          onChange={(e) => updateEditScreen(index, 'capacity', parseInt(e.target.value) || 200)}
+                          placeholder="Capacity"
+                          className="w-20 px-2 py-1 border border-gray-200 rounded text-xs"
+                        />
+                        {(editForm.screens?.length || 0) > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => removeEditScreen(index)}
+                            className="p-1 text-gray-400 hover:text-red-500"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={addEditScreen}
+                      className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Add Screen
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Amenities</label>

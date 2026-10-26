@@ -41,6 +41,7 @@ const Register = () => {
     try {
       const res = await axios.post('http://localhost:5000/api/auth/verify-otp', { email: formData.email, otp });
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify({ name: formData.name, email: formData.email }));
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.msg || 'Invalid or expired OTP');

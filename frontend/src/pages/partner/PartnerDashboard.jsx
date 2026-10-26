@@ -3,10 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   Building2, Film, Plus, Edit2, Trash2, DollarSign, Calendar, Clock, 
-  LogOut, CheckCircle, Search, Sparkles, X, Ticket, Radio, Armchair
+  LogOut, CheckCircle, Search, Sparkles, X, Ticket, Radio, Armchair,
+  Tv, Layers
 } from 'lucide-react';
 import getSocket from '../../utils/socket';
 import { playLiveBookingChime } from '../../utils/audio';
+
+const PROJECTION_FORMATS = [
+  'Standard 2D',
+  'Dolby Atmos',
+  'IMAX 4K Laser',
+  '4DX 3D',
+  'INSIGNIA / Gold Class Recliner',
+  '4K Barco Laser',
+  'Onyx Cinema LED',
+  'ScreenX (270° Panoramic)',
+  'HDR BY BARCO',
+  'BARCO 4K LASER',
+  'BARCO FLAGSHIP LASER',
+  'IMAX 2D'
+];
 
 const PartnerDashboard = () => {
   const navigate = useNavigate();
@@ -25,6 +41,8 @@ const PartnerDashboard = () => {
   const [selectedFloorShowtimeId, setSelectedFloorShowtimeId] = useState('');
   const [floorBookedSeats, setFloorBookedSeats] = useState([]);
   const [floorLockedSeats, setFloorLockedSeats] = useState({});
+  const [inspectedSeat, setInspectedSeat] = useState(null);
+  const [selectedScreenFilter, setSelectedScreenFilter] = useState('ALL');
 
   // Price Edit Modal State
   const [editingShowtime, setEditingShowtime] = useState(null);
@@ -56,6 +74,21 @@ const PartnerDashboard = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   // Fetch Partner Theater Data, Showtimes & Movies
+  const handleForceReleaseLock = (seatId) => {
+    const socket = getSocket();
+    socket.emit('force_unlock_seat', {
+      showtimeId: selectedFloorShowtimeId,
+      seatId,
+      partnerName: partnerData?.theater?.name || 'Box Office Supervisor'
+    });
+    setFloorLockedSeats(prev => {
+      const copy = { ...prev };
+      delete copy[seatId];
+      return copy;
+    });
+    setInspectedSeat(null);
+  };
+
   const fetchAllData = async () => {
     if (!token) {
       navigate('/partner/login');
@@ -67,7 +100,7 @@ const PartnerDashboard = () => {
       const [theaterRes, showtimesRes, moviesRes] = await Promise.all([
         axios.get('http://localhost:5000/api/theaters/partner/my-theater', { headers }),
         axios.get('http://localhost:5000/api/theaters/partner/showtimes', { headers }),
-        axios.get('http://localhost:5000/api/movies')
+        axios.get('http://localhost:5000/api/movies?all=true')
       ]);
 
       setPartnerData(theaterRes.data);
@@ -78,6 +111,14 @@ const PartnerDashboard = () => {
       }
       if (showtimesRes.data.length > 0) {
         setSelectedFloorShowtimeId(showtimesRes.data[0]._id);
+      }
+      if (theaterRes.data?.theater?.screens?.length > 0) {
+        const firstSc = theaterRes.data.theater.screens[0];
+        setShowForm(prev => ({
+          ...prev,
+          screen: firstSc.name,
+          format: firstSc.screenType || prev.format
+        }));
       }
     } catch (err) {
       console.error(err);
@@ -131,6 +172,11 @@ const PartnerDashboard = () => {
       });
     });
 
+    socket.on('demo_state_reset', () => {
+      setFloorLockedSeats({});
+      fetchFloorSeats();
+    });
+
     socket.on('seats_permanently_booked', ({ seats }) => {
       setFloorBookedSeats(prev => [...new Set([...prev, ...(seats || [])])]);
       setFloorLockedSeats(prev => {
@@ -146,6 +192,7 @@ const PartnerDashboard = () => {
       socket.off('seat_unlocked');
       socket.off('seats_released');
       socket.off('seats_permanently_booked');
+      socket.off('demo_state_reset');
     };
   }, [selectedFloorShowtimeId, token]);
 
@@ -296,6 +343,39 @@ const PartnerDashboard = () => {
 
   const theater = partnerData?.theater;
   const stats = partnerData?.stats;
+
+  const theaterScreens = (theater?.screens && theater.screens.length > 0)
+    ? theater.screens
+    : (theater?.theaterType === 'single_screen'
+        ? [{ screenNumber: 1, name: 'Main Screen', screenType: 'Dolby Atmos', capacity: 250 }]
+        : [
+            { screenNumber: 1, name: 'Audi 1', screenType: 'HDR BY BARCO', capacity: 200 },
+            { screenNumber: 2, name: 'Audi 2', screenType: 'DOLBY ATMOS', capacity: 180 },
+            { screenNumber: 3, name: 'Audi 3', screenType: 'IMAX 2D', capacity: 250 }
+          ]);
+
+  const handleOpenAddShowModal = () => {
+    const firstScreen = theaterScreens[0];
+    setShowForm(prev => {
+      const screenExists = theaterScreens.some(s => s.name === prev.screen);
+      const chosen = screenExists ? theaterScreens.find(s => s.name === prev.screen) : firstScreen;
+      return {
+        ...prev,
+        screen: chosen?.name || 'Audi 1',
+        format: chosen?.screenType || prev.format || 'Dolby Atmos'
+      };
+    });
+    setIsAddShowModalOpen(true);
+  };
+
+  const handleScreenSelect = (screenName) => {
+    const matched = theaterScreens.find(s => s.name === screenName);
+    setShowForm(prev => ({
+      ...prev,
+      screen: screenName,
+      format: matched?.screenType || prev.format
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#333333] relative">
@@ -463,7 +543,7 @@ const PartnerDashboard = () => {
 
           {activeTab === 'shows' && (
             <button
-              onClick={() => setIsAddShowModalOpen(true)}
+              onClick={handleOpenAddShowModal}
               className="mb-2 bg-[#F84464] hover:bg-[#d63a56] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-pink-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -596,6 +676,30 @@ const PartnerDashboard = () => {
         {activeTab === 'floor_map' && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 md:p-8 animate-fade-in">
             
+            {/* Screen Filter Chips */}
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mr-1">Filter Screen:</span>
+              {['ALL', ...new Set(showtimes.map(s => s.screen || 'Audi 1'))].map(sc => (
+                <button
+                  key={sc}
+                  onClick={() => {
+                    setSelectedScreenFilter(sc);
+                    const matching = sc === 'ALL' ? showtimes : showtimes.filter(s => (s.screen || 'Audi 1') === sc);
+                    if (matching.length > 0 && !matching.some(s => s._id === selectedFloorShowtimeId)) {
+                      setSelectedFloorShowtimeId(matching[0]._id);
+                    }
+                  }}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    selectedScreenFilter === sc
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                  }`}
+                >
+                  {sc === 'ALL' ? 'All Auditoriums' : sc}
+                </button>
+              ))}
+            </div>
+
             {/* Header & Showtime Selector */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100">
               <div>
@@ -621,7 +725,7 @@ const PartnerDashboard = () => {
                   onChange={(e) => setSelectedFloorShowtimeId(e.target.value)}
                   className="px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 bg-gray-50 outline-none focus:border-[#F84464] cursor-pointer"
                 >
-                  {showtimes.map(s => (
+                  {(selectedScreenFilter === 'ALL' ? showtimes : showtimes.filter(s => (s.screen || 'Audi 1') === selectedScreenFilter)).map(s => (
                     <option key={s._id} value={s._id}>
                       {s.movieId?.title} • {s.screen || 'Audi 1'} • {s.time}
                     </option>
@@ -711,13 +815,21 @@ const PartnerDashboard = () => {
                         }
 
                         return (
-                          <div 
+                          <button 
                             key={seatId} 
-                            className={classes}
-                            title={`Seat ${seatId}: ${isBooked ? 'Sold Out' : isHeld ? 'Held by Customer' : 'Available'}`}
+                            onClick={() => {
+                              setInspectedSeat({
+                                seatId,
+                                isBooked,
+                                isHeld,
+                                holder: floorLockedSeats[seatId]?.userLabel || 'Customer'
+                              });
+                            }}
+                            className={`${classes} cursor-pointer hover:ring-2 hover:ring-[#F84464] active:scale-95`}
+                            title={`Seat ${seatId}: ${isBooked ? 'Sold Out' : isHeld ? 'Held by Customer (Click to Inspect/Override)' : 'Available (Click to Inspect)'}`}
                           >
                             {col}
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -726,6 +838,54 @@ const PartnerDashboard = () => {
               </div>
 
             </div>
+
+            {/* Interactive Box Office Seat Inspector & Force Release Override */}
+            {inspectedSeat && (
+              <div className="mt-6 p-4 rounded-xl border border-gray-200 bg-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 max-w-xl mx-auto animate-fade-in-up">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${
+                    inspectedSeat.isBooked ? 'bg-gray-800 text-white' : inspectedSeat.isHeld ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                  }`}>
+                    {inspectedSeat.seatId}
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                      <span>Seat {inspectedSeat.seatId}</span>
+                      <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${
+                        inspectedSeat.isBooked ? 'bg-gray-100 text-gray-700' : inspectedSeat.isHeld ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        {inspectedSeat.isBooked ? 'Sold Out' : inspectedSeat.isHeld ? 'Held in Real-Time' : 'Available'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      {inspectedSeat.isHeld 
+                        ? `Held by: ${inspectedSeat.holder} (Checkout in progress)` 
+                        : inspectedSeat.isBooked 
+                        ? 'Confirmed box office admission ticket' 
+                        : 'Open capacity ready for booking'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {inspectedSeat.isHeld && (
+                    <button
+                      onClick={() => handleForceReleaseLock(inspectedSeat.seatId)}
+                      className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Force Release Lock</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setInspectedSeat(null)}
+                    className="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-800 cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
 
           </div>
         )}
@@ -979,6 +1139,36 @@ const PartnerDashboard = () => {
                 </div>
               </div>
 
+              {/* Theater Screen Architecture Banner */}
+              <div className="p-2.5 rounded-xl border flex items-center justify-between text-xs bg-slate-50 border-slate-200">
+                <div className="flex items-center gap-2">
+                  {theater?.theaterType === 'single_screen' ? (
+                    <>
+                      <span className="p-1 rounded-md bg-purple-100 text-purple-700">
+                        <Tv className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <span className="font-bold text-gray-800">Single Screen Cinema</span>
+                        <p className="text-[10px] text-gray-500">Hall: {theaterScreens[0]?.name || 'Main Screen'}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="p-1 rounded-md bg-blue-100 text-blue-700">
+                        <Layers className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <span className="font-bold text-gray-800">Multiplex Cinema</span>
+                        <p className="text-[10px] text-gray-500">{theaterScreens.length} configured auditoriums</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                  Screen Synced
+                </span>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
@@ -986,13 +1176,14 @@ const PartnerDashboard = () => {
                   </label>
                   <select
                     value={showForm.screen}
-                    onChange={(e) => setShowForm({ ...showForm, screen: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs outline-none focus:border-[#F84464] bg-white cursor-pointer"
+                    onChange={(e) => handleScreenSelect(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs outline-none focus:border-[#F84464] bg-white cursor-pointer font-medium"
                   >
-                    <option value="Audi 1">Audi 1 (Main Hall)</option>
-                    <option value="Audi 2">Audi 2 (Dolby Atmos)</option>
-                    <option value="Audi 3 (IMAX Laser)">Audi 3 (IMAX 4K Laser)</option>
-                    <option value="Audi 4 (VIP Lounge)">Audi 4 (VIP Lounge)</option>
+                    {theaterScreens.map((s, idx) => (
+                      <option key={s.screenNumber || idx} value={s.name}>
+                        {s.name} ({s.screenType || 'Standard'} • {s.capacity || 200} seats)
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -1003,14 +1194,11 @@ const PartnerDashboard = () => {
                   <select
                     value={showForm.format}
                     onChange={(e) => setShowForm({ ...showForm, format: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs outline-none focus:border-[#F84464] bg-white cursor-pointer"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs outline-none focus:border-[#F84464] bg-white cursor-pointer font-medium"
                   >
-                    <option value="HDR BY BARCO">HDR BY BARCO</option>
-                    <option value="BARCO 4K LASER">BARCO 4K LASER</option>
-                    <option value="BARCO FLAGSHIP LASER">BARCO FLAGSHIP LASER</option>
-                    <option value="DOLBY ATMOS">DOLBY ATMOS</option>
-                    <option value="4DX 3D">4DX 3D</option>
-                    <option value="IMAX 2D">IMAX 2D</option>
+                    {[...new Set([showForm.format, ...theaterScreens.map(s => s.screenType), ...PROJECTION_FORMATS].filter(Boolean))].map(f => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
                   </select>
                 </div>
               </div>

@@ -12,7 +12,7 @@ const ListYourShow = () => {
         </div>
 
         <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-4">
-          List Your Theater on QuickShow
+          List Your Theater on bookmyshow
         </h1>
         <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
           Reach millions of movie lovers every day. All cinema partners are onboarded and verified centrally by our administrative team.

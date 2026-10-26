@@ -128,9 +128,21 @@ const TicketPassModal = ({ isOpen, onClose, booking }) => {
               </p>
             </div>
 
-            <div className="col-span-2 pt-2 border-t border-gray-200/60 flex justify-between items-center text-[11px] text-gray-500">
+            <div className="col-span-2 pt-2 border-t border-gray-200/60 flex justify-between items-center text-[11px] text-gray-500 flex-wrap gap-1">
               <span>Booking ID: <strong className="font-mono text-gray-800">{booking._id}</strong></span>
-              <span className="text-gray-400">Audi 02</span>
+              <span>
+                Payment: {booking.paymentMethod === 'wallet' ? (
+                  <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    💳 BMS Wallet (100%)
+                  </span>
+                ) : booking.paymentMethod === 'split' ? (
+                  <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                    Split (₹{booking.walletAmountDeducted} Wallet + ₹{booking.razorpayAmountPaid} Online)
+                  </span>
+                ) : (
+                  <span className="font-bold text-gray-700">Online / Razorpay</span>
+                )}
+              </span>
             </div>
           </div>
 

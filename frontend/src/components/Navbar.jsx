@@ -12,6 +12,17 @@ const Navbar = () => {
   const token = localStorage.getItem('token');
   const partnerToken = localStorage.getItem('partner_token');
 
+  let userName = 'User';
+  try {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      if (parsed.name) userName = parsed.name.split(' ')[0];
+    }
+  } catch (e) {
+    // ignore
+  }
+
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -49,6 +60,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     navigate('/login');
   };
 
@@ -123,26 +135,27 @@ const Navbar = () => {
               <div className="flex items-center gap-4">
                 <Link to="/profile" className="flex items-center gap-1.5 text-gray-300 hover:text-white text-[14px] font-medium transition-colors">
                   <User className="w-4 h-4" />
-                  Hi, User
+                  Hi, {userName}
                 </Link>
                 <button onClick={handleLogout} className="bg-[#F84464] hover:bg-[#d63a56] text-white px-5 py-[6px] rounded text-[12px] font-medium transition-colors cursor-pointer">
                   Sign Out
                 </button>
               </div>
             ) : (
-              <Link to="/login" className="bg-[#F84464] hover:bg-[#d63a56] text-white px-5 py-[6px] rounded text-[12px] font-medium transition-colors">
-                Sign In
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link to="/login" className="bg-[#F84464] hover:bg-[#d63a56] text-white px-5 py-[6px] rounded text-[12px] font-medium transition-colors">
+                  Sign In
+                </Link>
+                <Link 
+                  to={partnerToken ? "/partner/dashboard" : "/partner/login"} 
+                  className="hidden lg:flex items-center gap-1 text-xs text-pink-400 hover:text-white transition-colors bg-gray-800/80 px-2.5 py-1.5 rounded-lg border border-gray-700 font-semibold"
+                  title="Theater Partner Portal"
+                >
+                  <Building2 className="w-3.5 h-3.5 text-[#F84464]" />
+                  <span>Partner Login</span>
+                </Link>
+              </div>
             )}
-            
-            <Link 
-              to={partnerToken ? "/partner/dashboard" : "/partner/login"} 
-              className="hidden lg:flex items-center gap-1 text-xs text-pink-400 hover:text-white transition-colors bg-gray-800/80 px-2.5 py-1.5 rounded-lg border border-gray-700 font-semibold"
-              title="Theater Partner Portal"
-            >
-              <Building2 className="w-3.5 h-3.5 text-[#F84464]" />
-              <span>Partner Login</span>
-            </Link>
 
             <div className="cursor-pointer text-gray-300 hover:text-white">
               <Menu className="w-6 h-6" />
@@ -157,19 +170,21 @@ const Navbar = () => {
           {/* Left Links */}
           <div className="flex items-center gap-4 lg:gap-6">
             <Link to="/" className="hover:text-white transition-colors">Movies</Link>
-            <Link to="/" className="hover:text-white transition-colors">Coming Soon</Link>
+            {/* <Link to="/" className="hover:text-white transition-colors">Coming Soon</Link> */}
           </div>
           {/* Right Links */}
           <div className="flex items-center gap-4 lg:gap-6 text-[12px]">
-            <Link 
-              to={partnerToken ? "/partner/dashboard" : "/partner/login"} 
-              className="text-[#F84464] hover:text-white transition-colors font-bold flex items-center gap-1"
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>ListYourShow (Cinema Partner)</span>
-            </Link>
-            <Link to="/corporates" className="hover:text-white transition-colors">Corporates</Link>
-            <Link to="/offers" className="hover:text-white transition-colors">Offers</Link>
+            {!token && (
+              <Link 
+                to={partnerToken ? "/partner/dashboard" : "/partner/login"} 
+                className="text-[#F84464] hover:text-white transition-colors font-bold flex items-center gap-1"
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>ListYourShow (Cinema Partner)</span>
+              </Link>
+            )}
+            <Link to="/about" className="hover:text-white transition-colors">About</Link>
+            {/* <Link to="/offers" className="hover:text-white transition-colors">Offers</Link> */}
             <Link to="/gift-cards" className="hover:text-white transition-colors">Gift Cards</Link>
             <Link to="/contact" className="hover:text-white transition-colors font-medium">Contact today!</Link>
           </div>

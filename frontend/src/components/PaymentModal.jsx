@@ -40,11 +40,11 @@ const PaymentModal = ({ isOpen, onClose, totalAmount, movieTitle, onConfirmPayme
         {/* Modal Brand Bar */}
         <div className="bg-[#1F2533] px-6 py-4 flex items-center justify-between text-white">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#F84464] flex items-center justify-center font-black text-sm">
-              QS
+            <div className="w-8 h-8 rounded-lg bg-[#F84464] flex items-center justify-center font-black text-sm italic">
+              BMS
             </div>
             <div>
-              <h3 className="text-sm font-bold tracking-tight">QuickShow Secure Checkout</h3>
+              <h3 className="text-sm font-bold tracking-tight">bookmyshow Secure Checkout</h3>
               <p className="text-[11px] text-gray-400">100% Secure 256-bit Encrypted Payment</p>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { ChevronRight, Star } from 'lucide-react';
+import { ChevronRight, Star, Film } from 'lucide-react';
 import { useLocationContext } from '../context/LocationContext';
 
 const Home = () => {
@@ -72,7 +72,15 @@ const Home = () => {
               </Link>
             ))}
             {movies.length === 0 && (
-              <div className="col-span-5 text-center text-gray-500 py-10">No movies found. Please check backend.</div>
+              <div className="col-span-2 sm:col-span-3 md:col-span-4 lg:col-span-5 bg-white p-12 rounded-2xl border border-gray-200 text-center shadow-xs">
+                <div className="w-16 h-16 rounded-full bg-rose-50 text-[#F84464] flex items-center justify-center mx-auto mb-4">
+                  <Film className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-800">No Movies Currently Showing in {city || 'Selected City'}</h3>
+                <p className="text-xs text-gray-500 max-w-md mx-auto mt-1.5">
+                  Movies will automatically appear on your screen once partner theaters publish active showtimes for this city. Check back soon for newly published shows!
+                </p>
+              </div>
             )}
           </div>
         )}

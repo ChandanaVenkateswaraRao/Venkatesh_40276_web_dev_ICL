@@ -29,6 +29,11 @@ const UserSchema = new mongoose.Schema({
   },
   otp: String,
   otpExpires: Date,
+  walletBalance: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
 });
 
 module.exports = mongoose.model('User', UserSchema);

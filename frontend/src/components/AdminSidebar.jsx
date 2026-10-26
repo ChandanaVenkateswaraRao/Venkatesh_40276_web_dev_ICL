@@ -7,7 +7,7 @@ const AdminSidebar = () => {
 
   return (
     <div className="w-64 bg-[#2B314B] min-h-screen text-white p-5 flex flex-col gap-6 fixed h-full z-20">
-      <div className="text-2xl font-bold italic tracking-tighter mb-8 text-center text-[#F84464]">QuickShow Admin</div>
+      <div className="text-2xl font-bold italic tracking-tighter mb-8 text-center text-[#F84464]">bookmyshow Admin</div>
       
       <div className="flex flex-col gap-2">
         <Link to="/admin" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive('/admin') ? 'bg-[#F84464] text-white' : 'hover:bg-slate-700 text-gray-300'}`}>

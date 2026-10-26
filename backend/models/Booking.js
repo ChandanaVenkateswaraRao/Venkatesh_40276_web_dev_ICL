@@ -27,6 +27,19 @@ const BookingSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  paymentMethod: {
+    type: String,
+    enum: ['razorpay', 'wallet', 'split'],
+    default: 'razorpay',
+  },
+  walletAmountDeducted: {
+    type: Number,
+    default: 0,
+  },
+  razorpayAmountPaid: {
+    type: Number,
+    default: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

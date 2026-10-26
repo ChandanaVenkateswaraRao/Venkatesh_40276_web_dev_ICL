@@ -9,10 +9,10 @@ import Booking from './pages/Booking';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import ListYourShow from './pages/ListYourShow';
-import Corporates from './pages/Corporates';
 import Offers from './pages/Offers';
 import GiftCards from './pages/GiftCards';
 import Contact from './pages/Contact';
+import About from './pages/About';
 
 import Footer from './components/Footer';
 import AdminLayout from './pages/admin/Layout';
@@ -39,10 +39,10 @@ function App() {
           <Route path="/book/:id" element={<Booking />} />
           
           <Route path="/list-your-show" element={<ListYourShow />} />
-          <Route path="/corporates" element={<Corporates />} />
           <Route path="/offers" element={<Offers />} />
           <Route path="/gift-cards" element={<GiftCards />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
 
           {/* Theater Partner Portal Routes */}
           <Route path="/partner/login" element={<PartnerLogin />} />

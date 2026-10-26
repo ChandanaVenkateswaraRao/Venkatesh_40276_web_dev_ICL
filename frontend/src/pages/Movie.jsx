@@ -82,7 +82,9 @@ const Movie = () => {
         <div className="container mx-auto max-w-7xl px-4 py-8 relative z-10 flex flex-col md:flex-row gap-8 lg:gap-12 min-h-[480px] items-center">
           <div className="w-[260px] h-[390px] rounded-xl overflow-hidden shadow-2xl flex-shrink-0">
             <img src={movie.image} alt={movie.title} className="w-full h-full object-cover" />
-            <div className="bg-black text-white text-center py-1 text-xs font-semibold tracking-wider">In cinemas</div>
+            <div className={`text-white text-center py-1 text-xs font-semibold tracking-wider ${movie.hasShows ? 'bg-black' : 'bg-amber-600'}`}>
+              {movie.hasShows ? 'In cinemas' : 'Coming soon'}
+            </div>
           </div>
           
           <div className="flex flex-col flex-1 justify-center">
@@ -106,12 +108,21 @@ const Movie = () => {
             </p>
             
             <div className="flex gap-4 items-center flex-wrap">
-              <Link 
-                to={`/buytickets/${movie._id}`} 
-                className="bg-[#F84464] hover:bg-[#d63a56] text-white px-12 py-3.5 rounded-lg text-lg font-semibold w-max transition-colors shadow-lg"
-              >
-                Book tickets
-              </Link>
+              {movie.hasShows ? (
+                <Link 
+                  to={`/buytickets/${movie._id}`} 
+                  className="bg-[#F84464] hover:bg-[#d63a56] text-white px-12 py-3.5 rounded-lg text-lg font-semibold w-max transition-colors shadow-lg"
+                >
+                  Book tickets
+                </Link>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-5 py-3 rounded-lg text-sm font-bold flex items-center gap-2 backdrop-blur-md">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    Shows Opening Soon • Advance Notice
+                  </span>
+                </div>
+              )}
               {movie.trailerUrl && (
                 <button
                   onClick={() => setIsTrailerOpen(true)}

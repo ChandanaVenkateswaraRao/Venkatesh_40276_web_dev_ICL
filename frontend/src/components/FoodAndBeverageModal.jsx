@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Plus, Minus, Utensils, HeartHandshake, ShieldCheck } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Plus, Minus, Utensils, HeartHandshake, ShieldCheck, Wallet, CreditCard, Sparkles } from 'lucide-react';
 
 const fnbMenu = [
   {
@@ -62,10 +62,18 @@ const fnbMenu = [
 
 const categories = ['All', 'Combos', 'Popcorn', 'Beverages', 'Snacks'];
 
-const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, onProceedToPayment }) => {
+const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, walletBalance = 0, onProceedToPayment }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [cart, setCart] = useState({});
   const [donateBookASmile, setDonateBookASmile] = useState(true);
+  const [useWallet, setUseWallet] = useState(walletBalance > 0);
+
+  // Sync default useWallet if walletBalance changes
+  useEffect(() => {
+    if (walletBalance > 0) {
+      setUseWallet(true);
+    }
+  }, [walletBalance]);
 
   if (!isOpen) return null;
 
@@ -95,6 +103,10 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, onProceedToPayment
   const donation = donateBookASmile ? 1 : 0;
   const grandTotal = Math.round(ticketTotal + fnbTotal + convenienceFee + gst + donation);
 
+  // Wallet deduction calculation
+  const walletDeductAmount = useWallet ? Math.min(walletBalance, grandTotal) : 0;
+  const finalPayable = Math.max(0, grandTotal - walletDeductAmount);
+
   const filteredItems = selectedCategory === 'All' 
     ? fnbMenu 
     : fnbMenu.filter(item => item.category === selectedCategory);
@@ -103,6 +115,9 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, onProceedToPayment
     onProceedToPayment({
       fnbTotal,
       grandTotal,
+      useWallet,
+      walletDeductAmount,
+      finalPayable,
       cartItems: Object.entries(cart).map(([id, qty]) => ({
         ...fnbMenu.find(m => m.id === id),
         qty
@@ -119,13 +134,13 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, onProceedToPayment
           <div className="flex items-center gap-2">
             <Utensils className="w-5 h-5 text-[#F84464]" />
             <div>
-              <h2 className="text-lg font-bold">Grab a Bite!</h2>
-              <p className="text-xs text-gray-300">Pre-book your movie snacks & skip the concession queues</p>
+              <h2 className="text-lg font-bold">Grab a Bite & Review Bill</h2>
+              <p className="text-xs text-gray-300">Pre-book cinema snacks & apply BookMyShow Wallet deduction</p>
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-800 transition-colors"
+            className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -177,17 +192,17 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, onProceedToPayment
                         {qty === 0 ? (
                           <button
                             onClick={() => addItem(item.id)}
-                            className="bg-white border border-[#F84464] text-[#F84464] hover:bg-pink-50 text-xs font-bold px-3 py-1 rounded-md transition-colors"
+                            className="bg-white border border-[#F84464] text-[#F84464] hover:bg-pink-50 text-xs font-bold px-3 py-1 rounded-md transition-colors cursor-pointer"
                           >
                             ADD
                           </button>
                         ) : (
                           <div className="flex items-center gap-2 bg-[#F84464] text-white rounded-md px-2 py-0.5 text-xs font-bold shadow-xs">
-                            <button onClick={() => removeItem(item.id)} className="hover:opacity-80">
+                            <button onClick={() => removeItem(item.id)} className="hover:opacity-80 cursor-pointer">
                               <Minus className="w-3.5 h-3.5" />
                             </button>
                             <span>{qty}</span>
-                            <button onClick={() => addItem(item.id)} className="hover:opacity-80">
+                            <button onClick={() => addItem(item.id)} className="hover:opacity-80 cursor-pointer">
                               <Plus className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -213,10 +228,12 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, onProceedToPayment
                   <span className="font-semibold text-gray-800">₹{ticketTotal}</span>
                 </div>
 
-                <div className="flex justify-between">
-                  <span>Food & Beverage</span>
-                  <span className="font-semibold text-gray-800">₹{fnbTotal}</span>
-                </div>
+                {fnbTotal > 0 && (
+                  <div className="flex justify-between">
+                    <span>Food & Beverage</span>
+                    <span className="font-semibold text-gray-800">₹{fnbTotal}</span>
+                  </div>
+                )}
 
                 <div className="flex justify-between">
                   <span>Convenience Fee</span>
@@ -244,17 +261,79 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, onProceedToPayment
                   </label>
                   <span className="font-semibold text-gray-800 text-xs">₹{donation}</span>
                 </div>
+
+                {/* BOOKMYSHOW WALLET DEDUCTION TOGGLE */}
+                {walletBalance > 0 ? (
+                  <div className="pt-2.5 border-t">
+                    <div className={`p-3 rounded-2xl border transition-all ${
+                      useWallet 
+                        ? 'bg-emerald-50 border-emerald-300 shadow-xs' 
+                        : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={useWallet}
+                          onChange={(e) => setUseWallet(e.target.checked)}
+                          className="mt-0.5 accent-emerald-600 w-4 h-4 rounded cursor-pointer"
+                        />
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                              <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                              Deduct from Wallet
+                            </span>
+                            <span className={`text-xs font-black ${useWallet ? 'text-emerald-700' : 'text-gray-400'}`}>
+                              -₹{useWallet ? walletDeductAmount : 0}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-gray-500 mt-0.5">
+                            Available Balance: <strong className="text-emerald-700">₹{walletBalance}</strong>
+                          </p>
+                          {useWallet && walletDeductAmount >= grandTotal && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md mt-1">
+                              <Sparkles className="w-3 h-3 text-emerald-600" /> 100% Wallet Paid (No Gateway Fee)
+                            </span>
+                          )}
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-2 border-t text-[11px] text-gray-400 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <Wallet className="w-3 h-3 text-gray-400" />
+                      BookMyShow Wallet:
+                    </span>
+                    <span>₹0 (No Balance)</span>
+                  </div>
+                )}
               </div>
 
-              {/* Grand Total */}
-              <div className="mt-6 pt-3 border-t-2 border-dashed border-gray-300 flex justify-between items-baseline">
-                <span className="font-bold text-sm text-gray-800">Amount Payable</span>
-                <span className="font-black text-xl text-[#F84464]">₹{grandTotal}</span>
+              {/* Grand Total & Final Payable */}
+              <div className="mt-5 pt-3 border-t-2 border-dashed border-gray-300">
+                <div className="flex justify-between items-baseline">
+                  <span className="font-bold text-sm text-gray-800">
+                    {useWallet && walletDeductAmount >= grandTotal ? 'Paid via Wallet' : 'Amount Payable'}
+                  </span>
+                  <span className="font-black text-xl text-[#F84464]">
+                    ₹{finalPayable}
+                  </span>
+                </div>
+                {useWallet && walletDeductAmount > 0 && finalPayable > 0 && (
+                  <p className="text-[10px] text-gray-500 mt-0.5 text-right">
+                    (₹{walletDeductAmount} from Wallet + ₹{finalPayable} via Razorpay)
+                  </p>
+                )}
               </div>
 
               <div className="mt-4 flex items-center gap-1.5 text-[11px] text-green-700 bg-green-50 p-2 rounded-lg">
                 <ShieldCheck className="w-4 h-4 flex-shrink-0 text-green-600" />
-                <span>100% Secure Transaction via Razorpay</span>
+                <span>
+                  {useWallet && walletDeductAmount >= grandTotal 
+                    ? '100% Instant Booking via BMS Wallet' 
+                    : '100% Secure Checkout via Razorpay'}
+                </span>
               </div>
             </div>
 
@@ -262,17 +341,40 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, onProceedToPayment
             <div className="mt-6 pt-4 border-t flex flex-col gap-2">
               <button
                 onClick={handlePay}
-                className="w-full bg-[#F84464] hover:bg-[#d63a56] text-white py-3 rounded-xl font-bold text-sm transition-all shadow-md shadow-pink-500/20 active:scale-[0.99] cursor-pointer"
+                className={`w-full py-3 rounded-xl font-bold text-sm transition-all shadow-md active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2 ${
+                  useWallet && walletDeductAmount >= grandTotal
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+                    : 'bg-[#F84464] hover:bg-[#d63a56] text-white shadow-pink-500/20'
+                }`}
               >
-                Proceed to Pay ₹{grandTotal}
+                {useWallet && walletDeductAmount >= grandTotal ? (
+                  <>
+                    <Wallet className="w-4 h-4" />
+                    <span>Pay ₹{grandTotal} with Wallet (Instant)</span>
+                  </>
+                ) : useWallet && walletDeductAmount > 0 ? (
+                  <>
+                    <CreditCard className="w-4 h-4" />
+                    <span>Pay ₹{finalPayable} (₹{walletDeductAmount} from Wallet)</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4" />
+                    <span>Proceed to Pay ₹{grandTotal}</span>
+                  </>
+                )}
               </button>
 
               <button
                 onClick={() => {
-                  // Pay without F&B
+                  const noFnbTotal = Math.round(ticketTotal + convenienceFee + gst + donation);
+                  const noFnbWalletDeduct = useWallet ? Math.min(walletBalance, noFnbTotal) : 0;
                   onProceedToPayment({
                     fnbTotal: 0,
-                    grandTotal: Math.round(ticketTotal + convenienceFee + gst + donation),
+                    grandTotal: noFnbTotal,
+                    useWallet,
+                    walletDeductAmount: noFnbWalletDeduct,
+                    finalPayable: Math.max(0, noFnbTotal - noFnbWalletDeduct),
                     cartItems: []
                   });
                 }}
