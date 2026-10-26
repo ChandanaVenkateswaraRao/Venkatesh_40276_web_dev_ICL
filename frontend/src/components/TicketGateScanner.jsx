@@ -103,9 +103,19 @@ const TicketGateScanner = ({ userRole = 'partner', currentTheater = null }) => {
         html5QrCodeRef.current = new Html5Qrcode('gate-qr-reader');
       }
 
-      const cameraParam = camIdOrFacing 
-        ? (typeof camIdOrFacing === 'string' && camIdOrFacing.length > 20 ? { deviceId: { exact: camIdOrFacing } } : { facingMode: camIdOrFacing })
-        : (selectedCameraId ? { deviceId: { exact: selectedCameraId } } : { facingMode: facingMode });
+      // Sanitize input in case a React SyntheticEvent was passed via onClick={startCamera}
+      const isStringArg = typeof camIdOrFacing === 'string' && camIdOrFacing.trim().length > 0;
+      let cameraParam = { facingMode: facingMode || 'environment' };
+
+      if (isStringArg) {
+        if (camIdOrFacing === 'environment' || camIdOrFacing === 'user') {
+          cameraParam = { facingMode: camIdOrFacing };
+        } else {
+          cameraParam = camIdOrFacing; // camera deviceId string
+        }
+      } else if (selectedCameraId && typeof selectedCameraId === 'string' && selectedCameraId.length > 5) {
+        cameraParam = selectedCameraId;
+      }
 
       await html5QrCodeRef.current.start(
         cameraParam,
