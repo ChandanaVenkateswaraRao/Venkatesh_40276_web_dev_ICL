@@ -231,74 +231,8 @@ const Dashboard = () => {
 
       </div>
 
-      {/* 2. ANALYTICS CHARTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Revenue Trend Area Chart */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="font-bold text-sm text-gray-900">Revenue Velocity (INR)</h3>
-              <p className="text-[11px] text-gray-500">Daily ticket booking sales trend</p>
-            </div>
-            <button 
-              onClick={fetchDashboardData}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-              title="Refresh Analytics"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-          </div>
+      
 
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F84464" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#F84464" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} />
-                <Tooltip 
-                  formatter={(value) => [`₹${value}`, 'Revenue']}
-                  contentStyle={{ backgroundColor: '#1E222D', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '12px' }}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="#F84464" strokeWidth={2.5} fillOpacity={1} fill="url(#revenueGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Tickets Sold Volume Bar Chart */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="font-bold text-sm text-gray-900">Admissions Volume</h3>
-              <p className="text-[11px] text-gray-500">Total verified admissions per day</p>
-            </div>
-            <span className="text-[11px] font-mono text-gray-400 font-semibold">Weekly</span>
-          </div>
-
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  formatter={(value) => [value, 'Admissions']}
-                  contentStyle={{ backgroundColor: '#1E222D', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '12px' }}
-                />
-                <Bar dataKey="tickets" fill="#10B981" radius={[6, 6, 0, 0]} maxBarSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-      </div>
 
       {/* 3. RECENT ADMISSIONS & QUICK ACTIONS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
