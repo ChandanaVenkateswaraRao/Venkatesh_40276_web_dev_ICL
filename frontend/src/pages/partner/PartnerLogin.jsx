@@ -120,8 +120,8 @@ const PartnerLogin = () => {
               <span>{loading ? 'Authenticating...' : 'Sign In to Theater Dashboard'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-
-            {/* 1-Click Demo Login Box */}
+          
+            {/* 1-Click Demo Login Box
             <div className="mt-6 pt-5 border-t border-gray-100">
               <div className="flex items-center justify-between mb-2.5">
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
@@ -161,7 +161,7 @@ const PartnerLogin = () => {
                   </span>
                 </button>
               </div>
-            </div>
+            </div> */}
 
             {/* Link to Admin Portal for Registration */}
             <div className="pt-4 border-t border-gray-100 text-center">
