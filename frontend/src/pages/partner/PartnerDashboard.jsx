@@ -1258,7 +1258,7 @@ const PartnerDashboard = ({ defaultTab }) => {
                   <input
                     type="number"
                     required
-                    min="50"
+                    min="1"
                     value={showForm.priceExecutive}
                     onChange={(e) => setShowForm({ ...showForm, priceExecutive: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#F84464]"
@@ -1272,7 +1272,7 @@ const PartnerDashboard = ({ defaultTab }) => {
                   <input
                     type="number"
                     required
-                    min="50"
+                    min="1"
                     value={showForm.pricePremium}
                     onChange={(e) => setShowForm({ ...showForm, pricePremium: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#F84464]"
