@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { API_BASE_URL } from '../api/config';
@@ -6,24 +6,19 @@ import {
   Ticket, 
   Printer, 
   CheckCircle, 
-  User, 
   Settings, 
-  CreditCard, 
   Gift, 
   HelpCircle, 
   LogOut, 
-  Calendar, 
   MapPin, 
-  Clock, 
   Armchair, 
-  QrCode, 
-  Edit3, 
   Check, 
   AlertCircle,
   Film,
   Search,
   ChevronRight,
-  Wallet
+  Wallet,
+  RefreshCw
 } from 'lucide-react';
 import TicketPassModal from '../components/TicketPassModal';
 import { useLocationContext } from '../context/LocationContext';
@@ -31,12 +26,12 @@ import { useLocationContext } from '../context/LocationContext';
 const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
   const [selectedPassBooking, setSelectedPassBooking] = useState(null);
   const [activeTab, setActiveTab] = useState('bookings'); // bookings | settings | vouchers | help
   
   // Settings form state
   const [nameInput, setNameInput] = useState('');
-  const [phoneInput, setPhoneInput] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState('');
   const [settingsError, setSettingsError] = useState('');
@@ -50,34 +45,38 @@ const Profile = () => {
   const { city, setCity } = useLocationContext();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
+  const fetchProfile = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    setLoading(true);
+    setFetchError('');
+    try {
+      const res = await axios.get(`${API_BASE_URL}/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProfile(res.data);
+      if (res.data.user) {
+        setNameInput(res.data.user.name || '');
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+      }
+    } catch (err) {
+      console.error('Failed to load profile:', err);
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         navigate('/login');
         return;
       }
-      try {
-        const res = await axios.get(`${API_BASE_URL}/auth/profile`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setProfile(res.data);
-        if (res.data.user) {
-          setNameInput(res.data.user.name || '');
-          localStorage.setItem('user', JSON.stringify(res.data.user));
-        }
-      } catch (err) {
-        console.error(err);
-        if (err.response?.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          navigate('/login');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
+      setFetchError(err.response?.data?.msg || 'Could not load your profile. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
 
+  useEffect(() => {
     fetchProfile();
 
     // Load gift cards from localStorage
@@ -87,7 +86,7 @@ const Profile = () => {
     } catch (e) {
       setSavedCards([]);
     }
-  }, [navigate]);
+  }, [fetchProfile]);
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -130,15 +129,44 @@ const Profile = () => {
     );
   }
 
+  if (fetchError) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 bg-red-50 text-[#F84464] rounded-2xl flex items-center justify-center mb-4">
+          <AlertCircle className="w-8 h-8" />
+        </div>
+        <h2 className="text-lg font-bold text-gray-800 mb-2">Unable to Load Profile</h2>
+        <p className="text-xs text-gray-500 max-w-sm mb-6">{fetchError}</p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => fetchProfile()}
+            className="px-5 py-2.5 bg-[#F84464] hover:bg-[#d63a56] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-pink-500/20 cursor-pointer flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Try Again</span>
+          </button>
+          <button
+            onClick={handleLogout}
+            className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+          >
+            Sign In Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!profile || !profile.user) {
     return null;
   }
 
+  const user = profile.user;
   const bookingsList = profile.bookings || [];
   const filteredBookings = bookingsList.filter(b => {
     if (!bookingSearch.trim()) return true;
     const title = b.movie?.title || '';
-    return title.toLowerCase().includes(bookingSearch.toLowerCase()) || b._id.includes(bookingSearch);
+    const searchLower = bookingSearch.toLowerCase();
+    return title.toLowerCase().includes(searchLower) || (b._id && String(b._id).toLowerCase().includes(searchLower));
   });
 
   const totalSpent = bookingsList.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
@@ -216,7 +244,7 @@ const Profile = () => {
                 <Wallet className="w-3.5 h-3.5 text-[#F84464]" />
               </div>
               <p className="text-2xl sm:text-3xl font-black text-white">
-                ₹{(user?.walletBalance || 0).toLocaleString()}
+                ₹{(user.walletBalance || 0).toLocaleString()}
               </p>
             </div>
             <Link 
