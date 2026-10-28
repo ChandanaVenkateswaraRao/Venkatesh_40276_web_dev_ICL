@@ -234,7 +234,7 @@ const Dashboard = () => {
       {/* 2. ANALYTICS CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Revenue Trend Area Chart */}
+        Revenue Trend Area Chart
         <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs">
           <div className="flex items-center justify-between mb-6">
             <div>
