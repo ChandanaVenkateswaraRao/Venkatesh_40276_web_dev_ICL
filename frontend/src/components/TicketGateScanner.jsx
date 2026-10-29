@@ -18,7 +18,6 @@ import {
   Calendar, 
   User, 
   Film,
-  Sparkles,
   ArrowRight,
   Maximize2
 } from 'lucide-react';
@@ -305,17 +304,17 @@ const TicketGateScanner = ({ userRole = 'partner', currentTheater = null }) => {
     <div className="space-y-6">
       
       {/* 1. Header with Badge & Info */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-lg border-2 border-slate-300 shadow-sm">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-pink-50 text-[#F84464]">
+          <div className="flex items-center gap-3">
+            <span className="p-2.5 rounded-md bg-[#F84464] text-white shrink-0">
               <QrCode className="w-5 h-5" />
             </span>
             <div>
-              <h2 className="text-lg font-bold text-gray-900 leading-tight">
+              <h2 className="text-lg font-black text-slate-900 leading-tight">
                 {userRole === 'partner' ? 'Auditorium Gate Security & QR Scanner' : 'Central Box Office & Gate Scanner'}
               </h2>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0.5 font-medium">
                 {userRole === 'partner' && currentTheater 
                   ? `Active Gate Validation Desk for: ${currentTheater.name} (${currentTheater.city})`
                   : 'Verify customer mobile m-tickets and validate rapid admission at venue entrance.'}
@@ -326,16 +325,16 @@ const TicketGateScanner = ({ userRole = 'partner', currentTheater = null }) => {
 
         {/* Right status badge */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold ${
             cameraActive 
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-              : 'bg-gray-100 text-gray-600 border-gray-200'
+              ? 'bg-emerald-700 text-white' 
+              : 'bg-slate-200 text-slate-700'
           }`}>
-            <span className={`w-2 h-2 rounded-full ${cameraActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`}></span>
-            <span>{cameraActive ? 'Live Camera Scanning' : 'Camera Standby'}</span>
+            <span className={`w-2 h-2 rounded-full ${cameraActive ? 'bg-white animate-pulse' : 'bg-slate-500'}`}></span>
+            <span>{cameraActive ? 'Camera Scanning' : 'Camera Standby'}</span>
           </div>
 
-          <div className="px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold">
+          <div className="px-3 py-1.5 rounded bg-slate-900 text-white text-xs font-mono font-bold">
             {sessionLogs.filter(l => l.status === 'VALID').length} Scanned
           </div>
         </div>
@@ -348,7 +347,7 @@ const TicketGateScanner = ({ userRole = 'partner', currentTheater = null }) => {
         <div className="lg:col-span-7 space-y-6">
           
           {/* Camera Viewfinder Card */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
+          <div className="bg-white p-6 rounded-lg border-2 border-slate-300 shadow-sm space-y-4">
             
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -432,11 +431,11 @@ const TicketGateScanner = ({ userRole = 'partner', currentTheater = null }) => {
                     <div className="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg"></div>
                     <div className="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-emerald-400 rounded-br-lg"></div>
                     
-                    {/* Scanning Laser Beam Animation */}
-                    <div className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_#34d399] animate-pulse top-1/2 -translate-y-1/2"></div>
+                    {/* Scanning Laser Beam Indicator (Solid Prominent Emerald) */}
+                    <div className="absolute left-1 right-1 h-0.5 bg-emerald-400 animate-pulse top-1/2 -translate-y-1/2"></div>
                   </div>
 
-                  <span className="absolute bottom-4 bg-black/60 backdrop-blur-md text-emerald-300 text-[11px] font-mono px-3 py-1 rounded-full border border-emerald-500/30">
+                  <span className="absolute bottom-4 bg-slate-900 text-emerald-400 text-[11px] font-mono px-3 py-1 rounded border border-emerald-500 font-bold uppercase tracking-wider">
                     ALIGN TICKET QR INSIDE FRAME
                   </span>
                 </div>
@@ -485,14 +484,14 @@ const TicketGateScanner = ({ userRole = 'partner', currentTheater = null }) => {
           </div>
 
           {/* Manual Reference Lookup Card */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-3">
+          <div className="bg-white p-6 rounded-lg border-2 border-slate-300 shadow-sm space-y-3">
             <div className="flex items-center gap-2">
-              <Search className="w-4 h-4 text-gray-600" />
-              <h3 className="font-bold text-xs uppercase tracking-wider text-gray-700">
+              <Search className="w-4 h-4 text-slate-700" />
+              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-900">
                 Manual Reference ID Lookup
               </h3>
             </div>
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[11px] text-slate-600 font-medium">
               If customer screen is dim or QR code cannot be read, enter the 24-character Booking ID or payment ID (pay_xxx / WALLET_xxx).
             </p>
 
@@ -502,12 +501,12 @@ const TicketGateScanner = ({ userRole = 'partner', currentTheater = null }) => {
                 value={manualInput}
                 onChange={(e) => setManualInput(e.target.value)}
                 placeholder="e.g. 67b..., pay_P123..., or WALLET_998..."
-                className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono outline-none focus:border-[#F84464] focus:bg-white transition-colors"
+                className="flex-1 px-4 py-2.5 bg-slate-50 border-2 border-slate-300 rounded text-xs font-mono font-bold text-slate-900 outline-none focus:border-[#F84464] focus:bg-white"
               />
               <button 
                 type="submit"
                 disabled={loading || !manualInput.trim()}
-                className="bg-[#1A1C24] hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs flex items-center gap-1.5"
+                className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded text-xs font-bold uppercase tracking-wider disabled:opacity-50 cursor-pointer shadow-sm flex items-center gap-1.5 shrink-0"
               >
                 {loading ? (
                   <>
@@ -530,7 +529,7 @@ const TicketGateScanner = ({ userRole = 'partner', currentTheater = null }) => {
         <div className="lg:col-span-5 space-y-6">
           
           {/* Main Result Card */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs min-h-[460px] flex flex-col justify-between">
+          <div className="bg-white p-6 rounded-lg border-2 border-slate-300 shadow-sm min-h-[460px] flex flex-col justify-between">
             
             {scanStatus === null ? (
               // Awaiting Scan State
@@ -726,17 +725,17 @@ const TicketGateScanner = ({ userRole = 'partner', currentTheater = null }) => {
 
       {/* 3. Session Admission Audit Trail (Recent Scans) */}
       {sessionLogs.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+        <div className="bg-white rounded-lg border-2 border-slate-300 shadow-sm overflow-hidden">
+          <div className="p-4 border-b-2 border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-gray-500" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">
+              <Clock className="w-4 h-4 text-slate-700" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
                 Session Admission Audit Log ({sessionLogs.length})
               </h3>
             </div>
             <button
               onClick={() => setSessionLogs([])}
-              className="text-[11px] text-gray-400 hover:text-gray-700 font-medium cursor-pointer"
+              className="text-[11px] text-slate-500 hover:text-slate-900 font-bold cursor-pointer"
             >
               Clear Log
             </button>
@@ -744,7 +743,7 @@ const TicketGateScanner = ({ userRole = 'partner', currentTheater = null }) => {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-400 text-[10px] uppercase font-bold tracking-wider">
+              <thead className="bg-slate-900 text-white text-[10px] uppercase font-bold tracking-wider">
                 <tr>
                   <th className="py-2.5 px-4">Time</th>
                   <th className="py-2.5 px-4">Ticket / Booking ID</th>

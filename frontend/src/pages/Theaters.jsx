@@ -119,8 +119,26 @@ const Theaters = () => {
   // Filter theaters and showtimes based on active filters
   const filteredTheaters = useMemo(() => {
     return theatersData.map(group => {
+      // Set to track and prevent duplicate showtimes
+      const seenShowtimeKeys = new Set();
+
       // Filter showtimes inside each theater
-      const matchingShowtimes = group.showtimes.filter(st => {
+      const matchingShowtimes = (group.showtimes || []).filter(st => {
+        // 1. Strict Date Matching: Only include showtimes that actually belong to the active selected date
+        if (selectedDate?.fullDate && st.date) {
+          const stDateStr = new Date(st.date).toISOString().split('T')[0];
+          if (stDateStr !== selectedDate.fullDate) {
+            return false;
+          }
+        }
+
+        // 2. Deduplication: Prevent duplicate showtimes for the same screen & time slot
+        const uniqueKey = st._id ? String(st._id) : `${st.time}_${st.screen || ''}`;
+        if (seenShowtimeKeys.has(uniqueKey)) {
+          return false;
+        }
+        seenShowtimeKeys.add(uniqueKey);
+
         const hour = getShowtimeHour(st.time);
 
         // Quick filter
@@ -146,10 +164,13 @@ const Theaters = () => {
         return true;
       });
 
+      // Sort showtimes chronologically
+      matchingShowtimes.sort((a, b) => getShowtimeHour(a.time) - getShowtimeHour(b.time));
+
       // Theater name search
       const matchesSearch = searchTheaterText.trim() === '' || 
-        group.theater.name.toLowerCase().includes(searchTheaterText.toLowerCase()) ||
-        (group.theater.location && group.theater.location.toLowerCase().includes(searchTheaterText.toLowerCase()));
+        group.theater?.name?.toLowerCase().includes(searchTheaterText.toLowerCase()) ||
+        (group.theater?.location && group.theater.location.toLowerCase().includes(searchTheaterText.toLowerCase()));
 
       return {
         ...group,
@@ -157,7 +178,7 @@ const Theaters = () => {
         hasMatches: matchesSearch && matchingShowtimes.length > 0
       };
     }).filter(group => group.hasMatches);
-  }, [theatersData, quickFilter, selectedTimeOfDay, selectedPriceRange, selectedFormat, searchTheaterText]);
+  }, [theatersData, selectedDate, quickFilter, selectedTimeOfDay, selectedPriceRange, selectedFormat, searchTheaterText]);
 
   const clearAllFilters = () => {
     setSelectedFormat('All');

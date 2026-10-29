@@ -66,19 +66,31 @@ const getMovieShowtimes = async (req, res, next) => {
     };
 
     if (date) {
-      const d = new Date(date);
-      if (!isNaN(d.getTime())) {
-        const startOfDay = new Date(d);
-        startOfDay.setHours(0, 0, 0, 0);
-        const queryStart = new Date(startOfDay.getTime() - 12 * 60 * 60 * 1000);
-        const queryEnd = new Date(startOfDay.getTime() + 36 * 60 * 60 * 1000);
-        showtimeQuery.date = { $gte: queryStart, $lte: queryEnd };
+      const parts = String(date).split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        const startOfDay = new Date(Date.UTC(y, m, d, 0, 0, 0, 0));
+        const endOfDay = new Date(Date.UTC(y, m, d, 23, 59, 59, 999));
+        showtimeQuery.date = { $gte: startOfDay, $lte: endOfDay };
+      } else {
+        const d = new Date(date);
+        if (!isNaN(d.getTime())) {
+          const startOfDay = new Date(d);
+          startOfDay.setUTCHours(0, 0, 0, 0);
+          const endOfDay = new Date(d);
+          endOfDay.setUTCHours(23, 59, 59, 999);
+          showtimeQuery.date = { $gte: startOfDay, $lte: endOfDay };
+        }
       }
     }
 
-    let showtimes = await Showtime.find(showtimeQuery).populate('theaterId');
+    let showtimes = await Showtime.find(showtimeQuery)
+      .populate('theaterId')
+      .sort({ date: 1, time: 1 });
 
-    if (showtimes.length === 0) {
+    if (showtimes.length === 0 && !date) {
       showtimes = await Showtime.find({ movieId, theaterId: { $in: theaterIds } })
         .limit(25)
         .populate('theaterId');
@@ -176,32 +188,139 @@ const getPartnerShowtimes = async (req, res, next) => {
   }
 };
 
-// 7. Theater Partner Portal: Add New Showtime
+// 7. Theater Partner Portal: Add New Showtime (Supports Multi-Day & Multi-Time Scheduling with Conflict Validation)
 const addPartnerShowtime = async (req, res, next) => {
   try {
-    let theaterId = req.user.theaterId;
-    if (!theaterId) {
-      const theater = (await Theater.findOne({ owner: req.user.id })) || (await Theater.findOne({}));
-      theaterId = theater._id;
+    let theater = null;
+    if (req.user.theaterId) {
+      theater = await Theater.findById(req.user.theaterId);
+    }
+    if (!theater) {
+      theater = (await Theater.findOne({ owner: req.user.id })) || (await Theater.findOne({}));
+    }
+    if (!theater) {
+      return res.status(404).json({ success: false, msg: 'Theater profile not found' });
     }
 
-    const { movieId, date, time, format, screen, pricePremium, priceExecutive } = req.body;
+    const theaterId = theater._id;
+    const isSingleScreen = theater.theaterType === 'single_screen';
 
-    const newShowtime = new Showtime({
+    const {
       movieId,
-      theaterId,
-      date: new Date(date),
+      date,
       time,
-      format: format || 'HDR BY BARCO',
-      screen: screen || 'Audi 1',
-      pricePremium: Number(pricePremium) || 350,
-      priceExecutive: Number(priceExecutive) || 200,
-      status: 'AVAILABLE'
-    });
+      startDate,
+      days,
+      times,
+      format,
+      screen,
+      pricePremium,
+      priceExecutive
+    } = req.body;
 
-    await newShowtime.save();
-    const populated = await Showtime.findById(newShowtime._id).populate('movieId');
-    res.status(201).json(populated);
+    // 1. Determine Target Screen
+    const targetScreen = isSingleScreen 
+      ? (theater.screens?.[0]?.name || 'Main Screen')
+      : (screen || theater.screens?.[0]?.name || 'Screen 1');
+
+    // 2. Build Date Range
+    const startBase = startDate || date || new Date().toISOString().split('T')[0];
+    const numDays = Math.max(1, Math.min(30, Number(days) || 1));
+    const dateList = [];
+
+    for (let i = 0; i < numDays; i++) {
+      const parts = startBase.split('-');
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10) + i;
+      const curDate = new Date(Date.UTC(y, m, d, 0, 0, 0, 0));
+      dateList.push(curDate);
+    }
+
+    // 3. Build Times List
+    let timeList = [];
+    if (times && Array.isArray(times) && times.length > 0) {
+      timeList = times.map(t => String(t).trim()).filter(Boolean);
+    } else if (time && typeof time === 'string') {
+      timeList = [time.trim()];
+    } else {
+      timeList = ['12:20 PM'];
+    }
+
+    if (timeList.length === 0) {
+      return res.status(400).json({ success: false, msg: 'Please provide at least one showtime.' });
+    }
+
+    // 4. Validate Overlap / Conflict Across All Dates & Times
+    for (const curDate of dateList) {
+      const dayStart = new Date(curDate);
+      dayStart.setUTCHours(0, 0, 0, 0);
+      const dayEnd = new Date(curDate);
+      dayEnd.setUTCHours(23, 59, 59, 999);
+
+      for (const curTime of timeList) {
+        const conflictQuery = {
+          theaterId,
+          date: { $gte: dayStart, $lte: dayEnd },
+          time: { $regex: new RegExp(`^${curTime.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+        };
+
+        // For multiplex, conflict applies specifically to this screen.
+        // For single-screen, any show on this date/time in the theater is a conflict.
+        if (!isSingleScreen) {
+          conflictQuery.screen = targetScreen;
+        }
+
+        const existingShow = await Showtime.findOne(conflictQuery).populate('movieId');
+        if (existingShow) {
+          const dateStr = curDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          const existingMovieTitle = existingShow.movieId?.title || 'Another movie';
+
+          if (isSingleScreen) {
+            return res.status(409).json({
+              success: false,
+              msg: `Schedule Conflict: In a single-screen cinema, only one movie can be played at a time. "${existingMovieTitle}" is already scheduled at ${curTime} on ${dateStr}.`
+            });
+          } else {
+            return res.status(409).json({
+              success: false,
+              msg: `Schedule Conflict: Screen "${targetScreen}" already has "${existingMovieTitle}" scheduled at ${curTime} on ${dateStr}. In a multiplex, each screen can only play one movie at a time.`
+            });
+          }
+        }
+      }
+    }
+
+    // 5. Batch Create All Showtimes
+    const showtimesToCreate = [];
+    const chosenFormat = format || (theater.screens?.find(s => s.name === targetScreen)?.screenType || 'Dolby Atmos');
+
+    for (const curDate of dateList) {
+      for (const curTime of timeList) {
+        showtimesToCreate.push({
+          movieId,
+          theaterId,
+          date: curDate,
+          time: curTime,
+          format: chosenFormat,
+          screen: targetScreen,
+          pricePremium: Number(pricePremium) || 350,
+          priceExecutive: Number(priceExecutive) || 200,
+          status: 'AVAILABLE'
+        });
+      }
+    }
+
+    const createdDocs = await Showtime.insertMany(showtimesToCreate);
+    const populated = await Showtime.find({ _id: { $in: createdDocs.map(s => s._id) } })
+      .populate('movieId')
+      .sort({ date: 1, time: 1 });
+
+    res.status(201).json({
+      success: true,
+      count: populated.length,
+      showtimes: populated
+    });
   } catch (err) {
     next(err);
   }
