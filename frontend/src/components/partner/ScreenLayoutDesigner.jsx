@@ -16,7 +16,10 @@ import {
   Minus,
   CheckCircle2,
   Info,
-  Maximize2
+  Maximize2,
+  Crown,
+  Star,
+  Ticket
 } from 'lucide-react';
 import { API_BASE_URL } from '../../api/config';
 
@@ -49,15 +52,29 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
   // Set of deleted seat IDs, e.g. 'A5', 'B6'
   const [deletedSeats, setDeletedSeats] = useState(new Set());
 
-  // Tier configuration for row groups
-  const [reclinerRowCount, setReclinerRowCount] = useState(2);
-  const [primeRowCount, setPrimeRowCount] = useState(3);
+  // Row to Seat Type Mapping: { [rowLabel]: 'recliner' | 'premium' | 'classic' }
+  const [rowTiers, setRowTiers] = useState({});
 
   // Status banners & loading
   const [saving, setSaving] = useState(false);
   const [successBanner, setSuccessBanner] = useState('');
   const [errorBanner, setErrorBanner] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Helper to generate balanced default tier distribution
+  const generateDefaultTiers = (numRows) => {
+    const map = {};
+    const labels = Array.from({ length: numRows }, (_, i) => String.fromCharCode(65 + i));
+    const reclinerEnd = Math.max(1, Math.min(2, Math.floor(numRows * 0.25)));
+    const primeEnd = Math.max(reclinerEnd + 1, Math.min(numRows, Math.floor(numRows * 0.65)));
+
+    labels.forEach((r, idx) => {
+      if (idx < reclinerEnd) map[r] = 'recliner';
+      else if (idx < primeEnd) map[r] = 'premium';
+      else map[r] = 'classic';
+    });
+    return map;
+  };
 
   // Load layout from selected screen whenever selectedScreenNumber changes
   useEffect(() => {
@@ -69,20 +86,35 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
       setCols(l.cols);
       setDeletedSeats(new Set(l.deletedSeats || []));
 
-      // Calculate tier counts from tierConfig
-      if (l.tierConfig) {
-        const reclinerCount = l.tierConfig.reclinerRows?.length ?? 2;
-        const primeCount = l.tierConfig.premiumRows?.length ?? 3;
-        setReclinerRowCount(reclinerCount);
-        setPrimeRowCount(primeCount);
+      // Calculate tier map from tierConfig
+      const currentLabels = (l.rowLabels && l.rowLabels.length === l.rows)
+        ? l.rowLabels
+        : Array.from({ length: l.rows }, (_, i) => String.fromCharCode(65 + i));
+
+      const recSet = new Set(l.tierConfig?.reclinerRows || []);
+      const premSet = new Set(l.tierConfig?.premiumRows || []);
+      const execSet = new Set(l.tierConfig?.executiveRows || []);
+
+      const hasConfig = recSet.size > 0 || premSet.size > 0 || execSet.size > 0;
+      const initialMap = {};
+
+      if (hasConfig) {
+        currentLabels.forEach((r) => {
+          if (recSet.has(r)) initialMap[r] = 'recliner';
+          else if (premSet.has(r)) initialMap[r] = 'premium';
+          else if (execSet.has(r)) initialMap[r] = 'classic';
+          else initialMap[r] = 'classic';
+        });
+      } else {
+        Object.assign(initialMap, generateDefaultTiers(l.rows));
       }
+      setRowTiers(initialMap);
     } else {
       // Sensible default layout: 8 rows x 12 cols
       setRows(8);
       setCols(12);
       setDeletedSeats(new Set());
-      setReclinerRowCount(2);
-      setPrimeRowCount(3);
+      setRowTiers(generateDefaultTiers(8));
     }
     setHasUnsavedChanges(false);
     setSuccessBanner('');
@@ -99,26 +131,88 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
     return Array.from({ length: cols }, (_, i) => i + 1);
   }, [cols]);
 
-  // Computed tier rows
+  // Helper to get tier for any row
+  const getRowTier = (row) => rowTiers[row] || 'classic';
+
+  // Computed tier rows lists
   const reclinerRows = useMemo(() => {
-    return rowLabels.slice(0, Math.min(reclinerRowCount, rows));
-  }, [rowLabels, reclinerRowCount, rows]);
+    return rowLabels.filter(r => getRowTier(r) === 'recliner');
+  }, [rowLabels, rowTiers]);
 
   const primeRows = useMemo(() => {
-    const start = Math.min(reclinerRowCount, rows);
-    const end = Math.min(start + primeRowCount, rows);
-    return rowLabels.slice(start, end);
-  }, [rowLabels, reclinerRowCount, primeRowCount, rows]);
+    return rowLabels.filter(r => getRowTier(r) === 'premium');
+  }, [rowLabels, rowTiers]);
 
   const classicRows = useMemo(() => {
-    const start = Math.min(reclinerRowCount + primeRowCount, rows);
-    return rowLabels.slice(start);
-  }, [rowLabels, reclinerRowCount, primeRowCount, rows]);
+    return rowLabels.filter(r => getRowTier(r) === 'classic');
+  }, [rowLabels, rowTiers]);
 
   // Calculate live capacity & stats
   const totalSlots = rows * cols;
   const deletedCount = deletedSeats.size;
   const activeCapacity = Math.max(0, totalSlots - deletedCount);
+
+  // Per-tier active seat counts (excluding deleted aisle seats)
+  const reclinerSeatsCount = useMemo(() => {
+    return reclinerRows.reduce((acc, row) => {
+      return acc + colNumbers.filter(c => !deletedSeats.has(`${row}${c}`)).length;
+    }, 0);
+  }, [reclinerRows, colNumbers, deletedSeats]);
+
+  const primeSeatsCount = useMemo(() => {
+    return primeRows.reduce((acc, row) => {
+      return acc + colNumbers.filter(c => !deletedSeats.has(`${row}${c}`)).length;
+    }, 0);
+  }, [primeRows, colNumbers, deletedSeats]);
+
+  const classicSeatsCount = useMemo(() => {
+    return classicRows.reduce((acc, row) => {
+      return acc + colNumbers.filter(c => !deletedSeats.has(`${row}${c}`)).length;
+    }, 0);
+  }, [classicRows, colNumbers, deletedSeats]);
+
+  // Set seat type for a specific row
+  const handleSetRowTier = (row, tier) => {
+    setRowTiers(prev => ({
+      ...prev,
+      [row]: tier
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  // Cycle row tier: Recliner -> Prime -> Classic -> Recliner
+  const handleCycleRowTier = (row) => {
+    const current = getRowTier(row);
+    const order = ['recliner', 'premium', 'classic'];
+    const nextTier = order[(order.indexOf(current) + 1) % order.length];
+    handleSetRowTier(row, nextTier);
+  };
+
+  // Bulk tier preset applier
+  const handleApplyPresetTiering = (preset) => {
+    const updated = {};
+    if (preset === 'standard') {
+      Object.assign(updated, generateDefaultTiers(rows));
+    } else if (preset === 'all_recliner') {
+      rowLabels.forEach(r => { updated[r] = 'recliner'; });
+    } else if (preset === 'all_prime') {
+      rowLabels.forEach(r => { updated[r] = 'premium'; });
+    } else if (preset === 'all_classic') {
+      rowLabels.forEach(r => { updated[r] = 'classic'; });
+    } else if (preset === 'recliner_and_prime') {
+      const half = Math.ceil(rows / 2);
+      rowLabels.forEach((r, i) => {
+        updated[r] = i < half ? 'recliner' : 'premium';
+      });
+    } else if (preset === 'prime_and_classic') {
+      const half = Math.ceil(rows / 2);
+      rowLabels.forEach((r, i) => {
+        updated[r] = i < half ? 'premium' : 'classic';
+      });
+    }
+    setRowTiers(updated);
+    setHasUnsavedChanges(true);
+  };
 
   // Toggle single seat deletion/restoration
   const handleToggleSeat = (seatId) => {
@@ -142,10 +236,8 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
     setDeletedSeats(prev => {
       const next = new Set(prev);
       if (allDeleted) {
-        // Restore all seats in row
         rowSeats.forEach(s => next.delete(s));
       } else {
-        // Delete all seats in row
         rowSeats.forEach(s => next.add(s));
       }
       return next;
@@ -161,10 +253,8 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
     setDeletedSeats(prev => {
       const next = new Set(prev);
       if (allDeleted) {
-        // Restore all seats in column
         colSeats.forEach(s => next.delete(s));
       } else {
-        // Delete all seats in column
         colSeats.forEach(s => next.add(s));
       }
       return next;
@@ -233,7 +323,7 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
       );
 
       setSuccessBanner(
-        `Layout for "${selectedScreen.name}" saved successfully with ${activeCapacity} seats! Booking pages will now display this customized layout.`
+        `Layout for "${selectedScreen.name}" saved successfully with ${activeCapacity} active seats (${reclinerSeatsCount} Recliners, ${primeSeatsCount} Prime/Exec, ${classicSeatsCount} Classic/Normal)!`
       );
       setHasUnsavedChanges(false);
 
@@ -248,15 +338,46 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
     }
   };
 
-  // Helper to determine tier of a row
+  // Helper to determine styling and metadata for any row tier
   const getRowTierInfo = (row) => {
-    if (reclinerRows.includes(row)) {
-      return { name: 'Royal Recliner', color: 'text-amber-600', border: 'border-amber-300', bg: 'bg-amber-50/70', badge: 'bg-amber-100 text-amber-800' };
+    const tier = getRowTier(row);
+    if (tier === 'recliner') {
+      return {
+        tier: 'recliner',
+        name: 'Royal Recliner Lounge',
+        shortName: 'Recliner',
+        tag: '👑 Recliner',
+        color: 'text-amber-800',
+        borderColor: 'border-amber-400',
+        bg: 'bg-amber-50',
+        badgeBg: 'bg-amber-100 text-amber-900 border-amber-300',
+        seatClasses: 'bg-amber-50 border-amber-400 text-amber-900 hover:bg-amber-100 hover:border-amber-500 shadow-2xs'
+      };
     }
-    if (primeRows.includes(row)) {
-      return { name: 'Prime Circle', color: 'text-[#F84464]', border: 'border-rose-300', bg: 'bg-rose-50/70', badge: 'bg-rose-100 text-[#F84464]' };
+    if (tier === 'premium') {
+      return {
+        tier: 'premium',
+        name: 'Prime / Executive Section',
+        shortName: 'Prime / Exec',
+        tag: '⭐ Prime / Exec',
+        color: 'text-rose-800',
+        borderColor: 'border-rose-400',
+        bg: 'bg-rose-50',
+        badgeBg: 'bg-rose-100 text-[#F84464] border-rose-300',
+        seatClasses: 'bg-rose-50 border-rose-300 text-rose-900 hover:bg-rose-100 hover:border-rose-400 shadow-2xs'
+      };
     }
-    return { name: 'Classic / Executive', color: 'text-slate-700', border: 'border-slate-300', bg: 'bg-slate-50', badge: 'bg-slate-100 text-slate-700' };
+    return {
+      tier: 'classic',
+      name: 'Classic / Normal Section',
+      shortName: 'Classic / Normal',
+      tag: '🎟️ Classic / Normal',
+      color: 'text-slate-800',
+      borderColor: 'border-slate-300',
+      bg: 'bg-slate-50',
+      badgeBg: 'bg-slate-100 text-slate-700 border-slate-300',
+      seatClasses: 'bg-white border-slate-300 text-slate-800 hover:bg-slate-100 hover:border-slate-400 shadow-2xs'
+    };
   };
 
   return (
@@ -384,6 +505,7 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
       {/* 3. Layout Controls Toolbar & Capacity HUD */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 space-y-6">
         
+        {/* Top Steppers & Presets */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
           
           {/* Dimension Inputs */}
@@ -487,26 +609,6 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
               </div>
             </div>
 
-            {/* Tier Division Control */}
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Seating Tiers Division
-              </label>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-amber-600 font-semibold text-[11px]">
-                  Recliner: {reclinerRows.length} rows ({reclinerRows.join(', ') || 'None'})
-                </span>
-                <span className="text-slate-300">&bull;</span>
-                <span className="text-[#F84464] font-semibold text-[11px]">
-                  Prime: {primeRows.length} rows ({primeRows[0] || '-'}{primeRows.length > 1 ? `-${primeRows[primeRows.length - 1]}` : ''})
-                </span>
-                <span className="text-slate-300">&bull;</span>
-                <span className="text-slate-600 font-semibold text-[11px]">
-                  Classic: {classicRows.length} rows ({classicRows[0] || '-'}{classicRows.length > 1 ? `-${classicRows[classicRows.length - 1]}` : ''})
-                </span>
-              </div>
-            </div>
-
           </div>
 
           {/* Preset Walkways / Tools */}
@@ -545,43 +647,245 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
 
         </div>
 
+        {/* Seat Types & Row Assignment Center */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                <Sliders className="w-4 h-4 text-[#F84464]" />
+                <span>Seat Types & Row Tier Assignment</span>
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Assign each row to <strong>Recliner</strong>, <strong>Prime / Executive</strong>, or <strong>Classic / Normal</strong>. You can also adjust rows directly from the grid below.
+              </p>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1">Presets:</span>
+              <button
+                type="button"
+                onClick={() => handleApplyPresetTiering('standard')}
+                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg transition-colors cursor-pointer shadow-2xs"
+                title="Front rows Recliner, Middle rows Prime, Rear rows Classic"
+              >
+                Balanced Mix
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPresetTiering('all_recliner')}
+                className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold rounded-lg transition-colors cursor-pointer shadow-2xs"
+                title="All rows Royal Recliner Lounge"
+              >
+                👑 All Recliner
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPresetTiering('all_prime')}
+                className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-[#F84464] border border-rose-300 text-[11px] font-bold rounded-lg transition-colors cursor-pointer shadow-2xs"
+                title="All rows Prime / Executive"
+              >
+                ⭐ All Prime
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPresetTiering('all_classic')}
+                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg transition-colors cursor-pointer shadow-2xs"
+                title="All rows Classic / Normal"
+              >
+                🎟️ All Classic
+              </button>
+            </div>
+          </div>
+
+          {/* 3 Tier Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            
+            {/* Tier 1: Recliner Card */}
+            <div className="p-3.5 rounded-xl border-2 border-amber-300/80 bg-gradient-to-br from-amber-50/80 to-amber-100/40 flex flex-col justify-between shadow-2xs">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">👑</span>
+                    <span className="text-xs font-black text-amber-950 uppercase tracking-wider">Royal Recliner Lounge</span>
+                  </div>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300">
+                    {reclinerSeatsCount} Seats
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-900/80 mb-2">
+                  Motorized leather recliners with personal armrests & footrest.
+                </p>
+              </div>
+              <div className="flex items-center justify-between text-[11px] font-bold text-amber-950 pt-2 border-t border-amber-200/80">
+                <span>{reclinerRows.length} Rows: <strong>{reclinerRows.join(', ') || 'None'}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPresetTiering('all_recliner')}
+                  className="text-[10px] text-amber-800 hover:text-amber-950 underline font-semibold cursor-pointer"
+                >
+                  Make All
+                </button>
+              </div>
+            </div>
+
+            {/* Tier 2: Prime / Executive Card */}
+            <div className="p-3.5 rounded-xl border-2 border-rose-300/80 bg-gradient-to-br from-rose-50/80 to-pink-50/40 flex flex-col justify-between shadow-2xs">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">⭐</span>
+                    <span className="text-xs font-black text-rose-950 uppercase tracking-wider">Prime / Executive</span>
+                  </div>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 border border-rose-300">
+                    {primeSeatsCount} Seats
+                  </span>
+                </div>
+                <p className="text-[11px] text-rose-900/80 mb-2">
+                  Premium middle rows with optimal screen viewing sweet-spot.
+                </p>
+              </div>
+              <div className="flex items-center justify-between text-[11px] font-bold text-rose-950 pt-2 border-t border-rose-200/80">
+                <span>{primeRows.length} Rows: <strong>{primeRows.join(', ') || 'None'}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPresetTiering('all_prime')}
+                  className="text-[10px] text-rose-800 hover:text-rose-950 underline font-semibold cursor-pointer"
+                >
+                  Make All
+                </button>
+              </div>
+            </div>
+
+            {/* Tier 3: Classic / Normal Card */}
+            <div className="p-3.5 rounded-xl border-2 border-slate-300/80 bg-gradient-to-br from-slate-50 to-slate-100/40 flex flex-col justify-between shadow-2xs">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">🎟️</span>
+                    <span className="text-xs font-black text-slate-900 uppercase tracking-wider">Classic / Normal</span>
+                  </div>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200 text-slate-800 border border-slate-300">
+                    {classicSeatsCount} Seats
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 mb-2">
+                  Standard comfortable auditorium cinema seating.
+                </p>
+              </div>
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 pt-2 border-t border-slate-200">
+                <span>{classicRows.length} Rows: <strong>{classicRows.join(', ') || 'None'}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPresetTiering('all_classic')}
+                  className="text-[10px] text-slate-600 hover:text-slate-900 underline font-semibold cursor-pointer"
+                >
+                  Make All
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Interactive Row Chip Selector Strip */}
+          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block mb-2">
+              Select or cycle seat type for each row (Click pill to cycle: 👑 Recliner ➔ ⭐ Prime / Exec ➔ 🎟️ Classic / Normal):
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {rowLabels.map(row => {
+                const tier = getRowTier(row);
+                const info = getRowTierInfo(row);
+
+                return (
+                  <div
+                    key={`chip-${row}`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-2xs ${
+                      tier === 'recliner'
+                        ? 'bg-amber-100/90 border-amber-400 text-amber-950'
+                        : tier === 'premium'
+                        ? 'bg-rose-100/90 border-rose-300 text-rose-950'
+                        : 'bg-white border-slate-300 text-slate-800'
+                    }`}
+                  >
+                    <span className="w-5 h-5 rounded bg-black/10 flex items-center justify-center font-mono text-[11px]">
+                      {row}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleCycleRowTier(row)}
+                      className="hover:underline flex items-center gap-1 cursor-pointer"
+                      title={`Row ${row}: Click to cycle seat type`}
+                    >
+                      <span>{info.icon}</span>
+                      <span>{info.shortName}</span>
+                    </button>
+                    <select
+                      value={tier}
+                      onChange={(e) => handleSetRowTier(row, e.target.value)}
+                      className="text-[10px] bg-transparent font-bold outline-none cursor-pointer border-l border-black/15 pl-1"
+                      title={`Change seat type for Row ${row}`}
+                    >
+                      <option value="recliner">Recliner</option>
+                      <option value="premium">Prime/Exec</option>
+                      <option value="classic">Classic/Normal</option>
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
         {/* Live Capacity HUD Metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-              Active Seating Capacity
+              Total Capacity
             </span>
-            <p className="text-2xl font-black text-slate-900 flex items-baseline gap-1">
+            <p className="text-xl font-black text-slate-900 flex items-baseline gap-1">
               <span>{activeCapacity}</span>
-              <span className="text-xs font-normal text-slate-500">seats</span>
+              <span className="text-[11px] font-normal text-slate-500">seats</span>
+            </p>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 block mb-0.5">
+              👑 Recliners
+            </span>
+            <p className="text-xl font-black text-amber-900 flex items-baseline gap-1">
+              <span>{reclinerSeatsCount}</span>
+              <span className="text-[10px] font-bold text-amber-700">({reclinerRows.length}r)</span>
+            </p>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block mb-0.5">
+              ⭐ Prime / Exec
+            </span>
+            <p className="text-xl font-black text-rose-750 flex items-baseline gap-1">
+              <span>{primeSeatsCount}</span>
+              <span className="text-[10px] font-bold text-rose-600">({primeRows.length}r)</span>
+            </p>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block mb-0.5">
+              🎟️ Classic / Normal
+            </span>
+            <p className="text-xl font-black text-slate-800 flex items-baseline gap-1">
+              <span>{classicSeatsCount}</span>
+              <span className="text-[10px] font-bold text-slate-500">({classicRows.length}r)</span>
             </p>
           </div>
 
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-              Deleted / Walkway Aisles
+              🚷 Aisle Spaces
             </span>
-            <p className="text-2xl font-black text-rose-600 flex items-baseline gap-1">
+            <p className="text-xl font-black text-slate-500 flex items-baseline gap-1">
               <span>{deletedCount}</span>
-              <span className="text-xs font-normal text-slate-500">spaces</span>
-            </p>
-          </div>
-
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-              Auditorium Grid Dimensions
-            </span>
-            <p className="text-2xl font-black text-slate-700">
-              {rows} &times; {cols}
-            </p>
-          </div>
-
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-              Auditorium Screen
-            </span>
-            <p className="text-sm font-black text-slate-900 truncate mt-1">
-              {selectedScreen.name} ({selectedScreen.screenType})
+              <span className="text-[11px] font-normal text-slate-400">aisles</span>
             </p>
           </div>
         </div>
@@ -600,23 +904,29 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
             </p>
           </div>
 
-          {/* Visual Legend */}
-          <div className="flex items-center gap-4 text-[11px] shrink-0">
+          {/* Visual Legend with Live Counts */}
+          <div className="flex flex-wrap items-center gap-4 text-[11px] shrink-0">
             <div className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 rounded bg-amber-50 border border-amber-400 text-amber-700 flex items-center justify-center font-bold text-[8px]">R</span>
-              <span>Recliner</span>
+              <span className="w-4 h-4 rounded bg-amber-50 border border-amber-400 text-amber-900 flex items-center justify-center font-bold text-[9px] shadow-2xs">
+                👑
+              </span>
+              <span className="font-semibold text-amber-950">Royal Recliner ({reclinerSeatsCount})</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 rounded bg-rose-50 border border-rose-400 text-[#F84464] flex items-center justify-center font-bold text-[8px]">P</span>
-              <span>Prime</span>
+              <span className="w-4 h-4 rounded bg-rose-50 border border-rose-400 text-[#F84464] flex items-center justify-center font-bold text-[9px] shadow-2xs">
+                ⭐
+              </span>
+              <span className="font-semibold text-rose-950">Prime / Executive ({primeSeatsCount})</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 rounded bg-slate-100 border border-slate-300 text-slate-700 flex items-center justify-center font-bold text-[8px]">C</span>
-              <span>Classic</span>
+              <span className="w-4 h-4 rounded bg-white border border-slate-300 text-slate-700 flex items-center justify-center font-bold text-[9px] shadow-2xs">
+                🎟️
+              </span>
+              <span className="font-semibold text-slate-800">Classic / Normal ({classicSeatsCount})</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 rounded bg-white border border-dashed border-slate-300"></span>
-              <span className="text-slate-400 font-semibold">Deleted / Aisle</span>
+              <span className="w-4 h-4 rounded bg-white border-2 border-dashed border-slate-300"></span>
+              <span className="text-slate-400 font-semibold">Deleted / Aisle ({deletedCount})</span>
             </div>
           </div>
         </div>
@@ -653,7 +963,9 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
           
           {/* Top Column Number Headers (with Toggle Column action) */}
           <div className="flex items-center justify-center gap-1.5 mb-3">
-            <span className="w-6 text-[10px] font-bold text-slate-400 text-center">Row</span>
+            <div className="w-36 flex items-center justify-end pr-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Row & Type
+            </div>
             <div className="flex gap-1.5">
               {colNumbers.map((col) => (
                 <button
@@ -667,80 +979,146 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
                 </button>
               ))}
             </div>
-            <span className="w-6 text-[10px] font-bold text-slate-400 text-center">Row</span>
+            <div className="w-20 pl-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Row
+            </div>
           </div>
 
-          {/* Row By Row Matrix */}
+          {/* Row By Row Matrix with Section Divider Banners */}
           <div className="space-y-2">
-            {rowLabels.map((row) => {
+            {rowLabels.map((row, index) => {
               const tierInfo = getRowTierInfo(row);
+              const isFirstOfTier = index === 0 || getRowTier(row) !== getRowTier(rowLabels[index - 1]);
+              const activeInThisRow = colNumbers.filter(c => !deletedSeats.has(`${row}${c}`)).length;
 
               return (
-                <div key={row} className="flex items-center justify-center gap-1.5">
+                <div key={row} className="flex flex-col items-center">
                   
-                  {/* Left Row Label (Click to toggle entire row) */}
-                  <button
-                    type="button"
-                    onClick={() => handleToggleRow(row)}
-                    className="w-6 h-7 md:h-8 text-xs font-bold text-slate-500 hover:text-[#F84464] hover:bg-slate-200 rounded flex items-center justify-center transition-colors cursor-pointer"
-                    title={`Toggle Row ${row} (Click to delete/restore entire row)`}
-                  >
-                    {row}
-                  </button>
+                  {/* Section Divider Banner (Rendered when seat type changes) */}
+                  {isFirstOfTier && (
+                    <div className={`w-full flex items-center justify-between px-4 py-1.5 rounded-lg my-2 border shadow-2xs ${
+                      tierInfo.tier === 'recliner'
+                        ? 'bg-amber-100/70 border-amber-300 text-amber-950'
+                        : tierInfo.tier === 'premium'
+                        ? 'bg-rose-100/70 border-rose-300 text-rose-950'
+                        : 'bg-slate-100 border-slate-300 text-slate-800'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{tierInfo.icon}</span>
+                        <span className="text-xs font-black uppercase tracking-wider">
+                          {tierInfo.name}
+                        </span>
+                        <span className="text-[10px] font-medium opacity-80 hidden sm:inline">
+                          ({tierInfo.tier === 'recliner' ? 'Luxury wide motorized recliners' : tierInfo.tier === 'premium' ? 'Premium center sightline' : 'Standard auditorium seating'})
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-white/90 border border-black/10">
+                        {tierInfo.tier === 'recliner' ? reclinerSeatsCount : tierInfo.tier === 'premium' ? primeSeatsCount : classicSeatsCount} Active Seats
+                      </span>
+                    </div>
+                  )}
 
-                  {/* Seat Cells in this Row */}
-                  <div className="flex gap-1.5">
-                    {colNumbers.map((col) => {
-                      const seatId = `${row}${col}`;
-                      const isDeleted = deletedSeats.has(seatId);
+                  {/* The Row Itself */}
+                  <div className="flex items-center justify-center gap-1.5">
+                    
+                    {/* Left: Row letter & Interactive Seat Type Selector */}
+                    <div className="w-36 flex items-center justify-end gap-1.5 pr-1">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleRow(row)}
+                        className="w-6 h-7 md:h-8 text-xs font-black text-slate-700 hover:text-[#F84464] hover:bg-slate-200 rounded flex items-center justify-center transition-colors cursor-pointer"
+                        title={`Toggle Row ${row} (Click to delete/restore entire row)`}
+                      >
+                        {row}
+                      </button>
 
-                      if (isDeleted) {
+                      {/* Dropdown to change seat type for this row */}
+                      <select
+                        value={getRowTier(row)}
+                        onChange={(e) => handleSetRowTier(row, e.target.value)}
+                        className={`text-[10px] font-extrabold rounded-lg px-2 py-1 border transition-all cursor-pointer outline-none shadow-2xs ${
+                          tierInfo.tier === 'recliner'
+                            ? 'bg-amber-100 text-amber-950 border-amber-400 hover:bg-amber-200'
+                            : tierInfo.tier === 'premium'
+                            ? 'bg-rose-100 text-[#F84464] border-rose-300 hover:bg-rose-200'
+                            : 'bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200'
+                        }`}
+                        title={`Select seat type for Row ${row}`}
+                      >
+                        <option value="recliner">👑 Recliner</option>
+                        <option value="premium">⭐ Prime/Exec</option>
+                        <option value="classic">🎟️ Classic/Normal</option>
+                      </select>
+                    </div>
+
+                    {/* Seat Cells in this Row */}
+                    <div className="flex gap-1.5">
+                      {colNumbers.map((col) => {
+                        const seatId = `${row}${col}`;
+                        const isDeleted = deletedSeats.has(seatId);
+
+                        if (isDeleted) {
+                          return (
+                            <button
+                              key={seatId}
+                              type="button"
+                              onClick={() => handleToggleSeat(seatId)}
+                              className={`border-2 border-dashed border-slate-300 bg-white hover:bg-emerald-50 hover:border-emerald-400 rounded text-[10px] text-slate-300 hover:text-emerald-600 transition-all flex items-center justify-center cursor-pointer group shadow-2xs ${
+                                tierInfo.tier === 'recliner' ? 'w-9 h-8 md:w-10 md:h-8' : 'w-7 h-7 md:w-8 md:h-8'
+                              }`}
+                              title={`Aisle Space (${seatId}) - Click to Restore Seat`}
+                            >
+                              <span className="opacity-0 group-hover:opacity-100 font-bold transition-opacity">
+                                +
+                              </span>
+                            </button>
+                          );
+                        }
+
                         return (
                           <button
                             key={seatId}
                             type="button"
                             onClick={() => handleToggleSeat(seatId)}
-                            className="w-7 h-7 md:w-8 md:h-8 border-2 border-dashed border-slate-300/80 bg-white hover:bg-emerald-50 hover:border-emerald-400 rounded text-[10px] text-slate-300 hover:text-emerald-600 transition-all flex items-center justify-center cursor-pointer group shadow-2xs"
-                            title={`Aisle Space (${seatId}) - Click to Restore Seat`}
+                            className={`border rounded text-xs font-semibold transition-all relative flex items-center justify-center cursor-pointer group active:scale-95 shadow-2xs ${
+                              tierInfo.tier === 'recliner'
+                                ? 'w-9 h-8 md:w-10 md:h-8 bg-amber-50 border-amber-400 text-amber-950 hover:bg-rose-50 hover:border-rose-400 hover:text-rose-700'
+                                : tierInfo.tier === 'premium'
+                                ? 'w-7 h-7 md:w-8 md:h-8 bg-rose-50 border-rose-300 text-rose-950 hover:bg-rose-100 hover:border-rose-400 hover:text-rose-700'
+                                : 'w-7 h-7 md:w-8 md:h-8 bg-white border-slate-300 text-slate-800 hover:bg-slate-100 hover:border-slate-400'
+                            }`}
+                            title={`Active Seat: ${seatId} (${tierInfo.name}) - Click to Delete (Make Aisle)`}
                           >
-                            <span className="opacity-0 group-hover:opacity-100 font-bold transition-opacity">
-                              +
+                            {/* Seat Number */}
+                            <span className="group-hover:hidden text-[11px] font-bold">
+                              {col}
+                            </span>
+
+                            {/* Hover Delete Action Icon */}
+                            <span className="hidden group-hover:flex items-center justify-center text-rose-600 font-extrabold text-xs">
+                              &times;
                             </span>
                           </button>
                         );
-                      }
+                      })}
+                    </div>
 
-                      return (
-                        <button
-                          key={seatId}
-                          type="button"
-                          onClick={() => handleToggleSeat(seatId)}
-                          className={`w-7 h-7 md:w-8 md:h-8 border rounded text-xs font-semibold transition-all relative flex items-center justify-center cursor-pointer group active:scale-95 shadow-2xs ${tierInfo.bg} ${tierInfo.border} ${tierInfo.color} hover:bg-rose-50 hover:border-rose-400 hover:text-rose-700`}
-                          title={`Active Seat: ${seatId} (${tierInfo.name}) - Click to Delete (Make Aisle)`}
-                        >
-                          {/* Seat Number */}
-                          <span className="group-hover:hidden text-[11px] font-bold">
-                            {col}
-                          </span>
+                    {/* Right: Row Label & Seat Count */}
+                    <div className="w-20 flex items-center gap-1.5 pl-1">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleRow(row)}
+                        className="w-6 h-7 md:h-8 text-xs font-black text-slate-700 hover:text-[#F84464] hover:bg-slate-200 rounded flex items-center justify-center transition-colors cursor-pointer"
+                        title={`Toggle Row ${row}`}
+                      >
+                        {row}
+                      </button>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {activeInThisRow}s
+                      </span>
+                    </div>
 
-                          {/* Hover Delete Action Icon */}
-                          <span className="hidden group-hover:flex items-center justify-center text-rose-600 font-extrabold text-xs">
-                            &times;
-                          </span>
-                        </button>
-                      );
-                    })}
                   </div>
-
-                  {/* Right Row Label */}
-                  <button
-                    type="button"
-                    onClick={() => handleToggleRow(row)}
-                    className="w-6 h-7 md:h-8 text-xs font-bold text-slate-500 hover:text-[#F84464] hover:bg-slate-200 rounded flex items-center justify-center transition-colors cursor-pointer"
-                    title={`Toggle Row ${row}`}
-                  >
-                    {row}
-                  </button>
 
                 </div>
               );
@@ -749,7 +1127,9 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
 
           {/* Bottom Column Number Headers */}
           <div className="flex items-center justify-center gap-1.5 mt-3">
-            <span className="w-6 text-[10px] font-bold text-slate-400 text-center">Row</span>
+            <div className="w-36 text-right pr-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Row & Type
+            </div>
             <div className="flex gap-1.5">
               {colNumbers.map((col) => (
                 <span
@@ -760,7 +1140,9 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
                 </span>
               ))}
             </div>
-            <span className="w-6 text-[10px] font-bold text-slate-400 text-center">Row</span>
+            <div className="w-20 pl-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Row
+            </div>
           </div>
 
         </div>
