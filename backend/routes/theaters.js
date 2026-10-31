@@ -7,7 +7,8 @@ const auth = require('../middleware/auth');
 const {
   createShowtimeSchema,
   updatePriceSchema,
-  partnerAddMovieSchema
+  partnerAddMovieSchema,
+  saveScreenLayoutSchema
 } = require('../validators/theaterValidator');
 
 // ==========================================
@@ -20,6 +21,8 @@ router.put('/partner/showtimes/:id/price', auth, validate(updatePriceSchema), th
 router.delete('/partner/showtimes/:id', auth, theaterController.deleteShowtime);
 router.post('/partner/add-movie', auth, validate(partnerAddMovieSchema), theaterController.partnerAddMovie);
 router.post('/partner/validate-ticket', auth, adminController.validateTicket);
+router.put('/partner/screens/:screenNumber/layout', auth, validate(saveScreenLayoutSchema), theaterController.saveScreenLayout);
+router.put('/partner/screens/layout', auth, validate(saveScreenLayoutSchema), theaterController.saveScreenLayout);
 
 // ==========================================
 // PUBLIC THEATER & SHOWTIME ROUTES

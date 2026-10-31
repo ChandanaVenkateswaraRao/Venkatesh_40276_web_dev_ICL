@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { ChevronLeft, Clock, Users, ShieldAlert, Sparkles, Armchair, CheckCircle2, Zap, Radio, AlertCircle } from 'lucide-react';
@@ -417,6 +417,47 @@ const Booking = () => {
   const priceExecutive = showtime.priceExecutive || 200;
   const priceRecliner = pricePremium + 120; // Royal Recliner Lounge Tier
 
+  // Screen and Custom Layout Detection
+  const matchedScreen = showtime?.theaterId?.screens?.find(s => 
+    s.name === showtime?.screen || 
+    String(s.screenNumber) === String(showtime?.screen) ||
+    s.name?.toLowerCase() === showtime?.screen?.toLowerCase()
+  ) || (showtime?.theaterId?.screens?.length === 1 ? showtime?.theaterId?.screens[0] : null);
+
+  const customLayout = matchedScreen?.layout;
+  const hasCustomLayout = Boolean(customLayout && customLayout.rows && customLayout.cols);
+
+  // Dynamic Layout Rows & Columns
+  const customRows = useMemo(() => {
+    if (!hasCustomLayout) return [];
+    if (customLayout.rowLabels && customLayout.rowLabels.length === customLayout.rows) {
+      return customLayout.rowLabels;
+    }
+    return Array.from({ length: customLayout.rows }, (_, i) => String.fromCharCode(65 + i));
+  }, [hasCustomLayout, customLayout]);
+
+  const customCols = useMemo(() => {
+    if (!hasCustomLayout) return [];
+    return Array.from({ length: customLayout.cols }, (_, i) => i + 1);
+  }, [hasCustomLayout, customLayout]);
+
+  const deletedSeatsSet = useMemo(() => {
+    return hasCustomLayout ? new Set(customLayout.deletedSeats || []) : new Set();
+  }, [hasCustomLayout, customLayout]);
+
+  const customReclinerRows = useMemo(() => {
+    return hasCustomLayout ? (customLayout.tierConfig?.reclinerRows || []) : [];
+  }, [hasCustomLayout, customLayout]);
+
+  const customPrimeRows = useMemo(() => {
+    return hasCustomLayout ? (customLayout.tierConfig?.premiumRows || []) : [];
+  }, [hasCustomLayout, customLayout]);
+
+  const customClassicRows = useMemo(() => {
+    return hasCustomLayout ? (customLayout.tierConfig?.executiveRows || []) : [];
+  }, [hasCustomLayout, customLayout]);
+
+  // Default Fallback Layout if screen has no customized layout
   const reclinerRows = ['A', 'B'];
   const primeRows = ['C', 'D', 'E', 'F'];
   const classicRows = ['G', 'H', 'I', 'J'];
@@ -424,7 +465,14 @@ const Booking = () => {
   const cols = [1, 2, 3, 4, 5, '', 6, 7, 8, 9, 10, 11, 12, '', 13, 14, 15, 16, 17];
   const reclinerCols = [1, 2, '', 3, 4, '', 5, 6, '', 7, 8, '', 9, 10];
 
-  const totalSeatsCount = (reclinerRows.length * 10) + (primeRows.length * 16) + (classicRows.length * 16);
+  const activeReclinerRows = hasCustomLayout ? customReclinerRows : reclinerRows;
+  const activePrimeRows = hasCustomLayout ? customPrimeRows : primeRows;
+  const activeClassicRows = hasCustomLayout ? customClassicRows : classicRows;
+
+  const totalSeatsCount = hasCustomLayout
+    ? Math.max(1, (customLayout.rows * customLayout.cols) - deletedSeatsSet.size)
+    : (reclinerRows.length * 10) + (primeRows.length * 16) + (classicRows.length * 16);
+
   const heldCount = Object.keys(lockedByOthers).length;
   const bookedCount = bookedSeats.length;
   const availableCount = Math.max(0, totalSeatsCount - bookedCount - heldCount);
@@ -433,15 +481,15 @@ const Booking = () => {
     let total = 0;
     selectedSeats.forEach(seat => {
       const row = seat.charAt(0);
-      if (reclinerRows.includes(row)) total += priceRecliner;
-      else if (primeRows.includes(row)) total += pricePremium;
+      if (activeReclinerRows.includes(row)) total += priceRecliner;
+      else if (activePrimeRows.includes(row)) total += pricePremium;
       else total += priceExecutive;
     });
     return total;
   };
 
   const renderSeatRow = (row, isRecliner = false) => {
-    const colList = isRecliner ? reclinerCols : cols;
+    const colList = hasCustomLayout ? customCols : (isRecliner ? reclinerCols : cols);
 
     return (
       <div key={row} className={`flex items-center justify-center gap-1.5 ${isRecliner ? 'mb-3' : 'mb-2'}`}>
@@ -453,6 +501,12 @@ const Booking = () => {
             }
             
             const seatId = `${row}${col}`;
+
+            if (hasCustomLayout && deletedSeatsSet.has(seatId)) {
+              // Deleted seat / aisle walkway
+              return <div key={`aisle-${seatId}`} className="w-7 h-7 md:w-8 md:h-8" />;
+            }
+
             const isSelected = selectedSeats.includes(seatId);
             const isBooked = bookedSeats.includes(seatId);
             const isLockedByOther = Boolean(lockedByOthers[seatId]);
@@ -653,42 +707,61 @@ const Booking = () => {
           <div className="flex flex-col items-center">
             
             {/* TIER 1: ROYAL RECLINER LOUNGE */}
-            <div className="w-full mb-3 pl-8 flex items-center justify-between border-b border-rose-100 pb-2">
-              <div className="flex items-center gap-2">
-                <span className="p-1 rounded bg-amber-50 text-amber-600">
-                  <Armchair className="w-3.5 h-3.5" />
-                </span>
-                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
-                  Royal Recliner Lounge
-                </span>
-              </div>
-              <span className="text-xs font-black text-[#F84464]">₹ {priceRecliner}</span>
-            </div>
-            <div className="mb-6">
-              {reclinerRows.map(row => renderSeatRow(row, true))}
-            </div>
+            {activeReclinerRows.length > 0 && (
+              <>
+                <div className="w-full mb-3 pl-8 flex items-center justify-between border-b border-rose-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded bg-amber-50 text-amber-600">
+                      <Armchair className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Royal Recliner Lounge
+                    </span>
+                  </div>
+                  <span className="text-xs font-black text-[#F84464]">₹ {priceRecliner}</span>
+                </div>
+                <div className="mb-6">
+                  {activeReclinerRows.map(row => renderSeatRow(row, true))}
+                </div>
+              </>
+            )}
 
             {/* TIER 2: PRIME CIRCLE */}
-            <div className="w-full mb-3 pl-8 flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                Prime Circle
-              </span>
-              <span className="text-xs font-black text-gray-900">₹ {pricePremium}</span>
-            </div>
-            <div className="mb-6">
-              {primeRows.map(row => renderSeatRow(row, false))}
-            </div>
+            {activePrimeRows.length > 0 && (
+              <>
+                <div className="w-full mb-3 pl-8 flex items-center justify-between border-b border-gray-100 pb-2">
+                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Prime Circle
+                  </span>
+                  <span className="text-xs font-black text-gray-900">₹ {pricePremium}</span>
+                </div>
+                <div className="mb-6">
+                  {activePrimeRows.map(row => renderSeatRow(row, false))}
+                </div>
+              </>
+            )}
             
             {/* TIER 3: CLASSIC SECTION */}
-            <div className="w-full mb-3 pl-8 flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Classic Section
-              </span>
-              <span className="text-xs font-bold text-gray-600">₹ {priceExecutive}</span>
-            </div>
-            <div>
-              {classicRows.map(row => renderSeatRow(row, false))}
-            </div>
+            {activeClassicRows.length > 0 && (
+              <>
+                <div className="w-full mb-3 pl-8 flex items-center justify-between border-b border-gray-100 pb-2">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Classic Section
+                  </span>
+                  <span className="text-xs font-bold text-gray-600">₹ {priceExecutive}</span>
+                </div>
+                <div>
+                  {activeClassicRows.map(row => renderSeatRow(row, false))}
+                </div>
+              </>
+            )}
+
+            {/* Fallback if custom layout has no row tiers defined */}
+            {hasCustomLayout && activeReclinerRows.length === 0 && activePrimeRows.length === 0 && activeClassicRows.length === 0 && (
+              <div>
+                {customRows.map(row => renderSeatRow(row, false))}
+              </div>
+            )}
 
           </div>
           

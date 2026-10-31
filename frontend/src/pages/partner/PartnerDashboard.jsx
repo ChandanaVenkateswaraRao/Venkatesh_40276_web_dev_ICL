@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
@@ -10,6 +10,7 @@ import getSocket from '../../utils/socket';
 import { playLiveBookingChime } from '../../utils/audio';
 import { API_BASE_URL } from '../../api/config';
 import TicketGateScanner from '../../components/TicketGateScanner';
+import ScreenLayoutDesigner from '../../components/partner/ScreenLayoutDesigner';
 
 const PROJECTION_FORMATS = [
   'Standard 2D',
@@ -43,6 +44,8 @@ const PartnerDashboard = ({ defaultTab }) => {
       setActiveTab(defaultTab);
     } else if (params.get('tab') === 'scanner' || location.pathname.includes('/scanner')) {
       setActiveTab('scanner');
+    } else if (params.get('tab') === 'layout' || params.get('tab') === 'layout_designer' || location.pathname.includes('/layout')) {
+      setActiveTab('layout_designer');
     }
   }, [location, defaultTab]);
 
@@ -539,6 +542,49 @@ const PartnerDashboard = ({ defaultTab }) => {
 
   const currentConflicts = checkScheduleConflicts();
 
+  // Selected floor showtime & matched screen layout
+  const currentFloorShowtime = showtimes.find(s => s._id === selectedFloorShowtimeId);
+  const floorPricePremium = currentFloorShowtime?.pricePremium || 350;
+  const floorPriceExecutive = currentFloorShowtime?.priceExecutive || 200;
+  const floorPriceRecliner = floorPricePremium + 120;
+
+  const floorMatchedScreen = theaterScreens.find(s => 
+    s.name?.toLowerCase() === currentFloorShowtime?.screen?.toLowerCase() ||
+    String(s.screenNumber) === String(currentFloorShowtime?.screen)
+  ) || (theaterScreens.length === 1 ? theaterScreens[0] : null);
+
+  const floorCustomLayout = floorMatchedScreen?.layout;
+  const hasFloorCustomLayout = Boolean(floorCustomLayout && floorCustomLayout.rows && floorCustomLayout.cols);
+
+  const floorCustomRows = useMemo(() => {
+    if (!hasFloorCustomLayout) return [];
+    if (floorCustomLayout.rowLabels && floorCustomLayout.rowLabels.length === floorCustomLayout.rows) {
+      return floorCustomLayout.rowLabels;
+    }
+    return Array.from({ length: floorCustomLayout.rows }, (_, i) => String.fromCharCode(65 + i));
+  }, [hasFloorCustomLayout, floorCustomLayout]);
+
+  const floorCustomCols = useMemo(() => {
+    if (!hasFloorCustomLayout) return [];
+    return Array.from({ length: floorCustomLayout.cols }, (_, i) => i + 1);
+  }, [hasFloorCustomLayout, floorCustomLayout]);
+
+  const floorDeletedSeatsSet = useMemo(() => {
+    return hasFloorCustomLayout ? new Set(floorCustomLayout.deletedSeats || []) : new Set();
+  }, [hasFloorCustomLayout, floorCustomLayout]);
+
+  const floorCustomReclinerRows = useMemo(() => {
+    return hasFloorCustomLayout ? (floorCustomLayout.tierConfig?.reclinerRows || []) : [];
+  }, [hasFloorCustomLayout, floorCustomLayout]);
+
+  const floorCustomPrimeRows = useMemo(() => {
+    return hasFloorCustomLayout ? (floorCustomLayout.tierConfig?.premiumRows || []) : [];
+  }, [hasFloorCustomLayout, floorCustomLayout]);
+
+  const floorCustomClassicRows = useMemo(() => {
+    return hasFloorCustomLayout ? (floorCustomLayout.tierConfig?.executiveRows || []) : [];
+  }, [hasFloorCustomLayout, floorCustomLayout]);
+
   // Seating Layout Tiers matching user Booking.jsx exactly
   const reclinerRows = ['A', 'B'];
   const primeRows = ['C', 'D', 'E', 'F'];
@@ -546,15 +592,81 @@ const PartnerDashboard = ({ defaultTab }) => {
   const cols = [1, 2, 3, 4, 5, '', 6, 7, 8, 9, 10, 11, 12, '', 13, 14, 15, 16, 17];
   const reclinerCols = [1, 2, '', 3, 4, '', 5, 6, '', 7, 8, '', 9, 10];
 
-  const totalSeatsCount = (reclinerRows.length * 10) + (primeRows.length * 16) + (classicRows.length * 16); // 148 seats
+  const activeFloorReclinerRows = hasFloorCustomLayout ? floorCustomReclinerRows : reclinerRows;
+  const activeFloorPrimeRows = hasFloorCustomLayout ? floorCustomPrimeRows : primeRows;
+  const activeFloorClassicRows = hasFloorCustomLayout ? floorCustomClassicRows : classicRows;
+
+  const totalSeatsCount = hasFloorCustomLayout
+    ? Math.max(1, (floorCustomLayout.rows * floorCustomLayout.cols) - floorDeletedSeatsSet.size)
+    : (reclinerRows.length * 10) + (primeRows.length * 16) + (classicRows.length * 16); // 148 seats
   const heldCount = Object.keys(floorLockedSeats).length;
   const bookedCount = floorBookedSeats.length;
   const availableCount = Math.max(0, totalSeatsCount - bookedCount - heldCount);
 
-  const currentFloorShowtime = showtimes.find(s => s._id === selectedFloorShowtimeId);
-  const floorPricePremium = currentFloorShowtime?.pricePremium || 350;
-  const floorPriceExecutive = currentFloorShowtime?.priceExecutive || 200;
-  const floorPriceRecliner = floorPricePremium + 120;
+  const renderFloorSeatRow = (row, tierName, price, isRecliner = false) => {
+    const colList = hasFloorCustomLayout ? floorCustomCols : (isRecliner ? reclinerCols : cols);
+    return (
+      <div key={row} className="flex items-center justify-center gap-1.5">
+        <span className="w-6 text-xs font-bold text-slate-400 text-center">{row}</span>
+        <div className="flex gap-1.5">
+          {colList.map((col, idx) => {
+            if (col === '') {
+              return <div key={`spacer-${idx}`} className={isRecliner ? 'w-6' : 'w-4'} />;
+            }
+            const seatId = `${row}${col}`;
+
+            if (hasFloorCustomLayout && floorDeletedSeatsSet.has(seatId)) {
+              // Deleted seat / aisle walkway
+              return <div key={`aisle-${seatId}`} className={isRecliner ? 'w-9 h-8 md:w-11 md:h-9' : 'w-7 h-7 md:w-8 md:h-8'} />;
+            }
+
+            const isBooked = floorBookedSeats.includes(seatId);
+            const isHeld = Boolean(floorLockedSeats[seatId]);
+            const isInspected = inspectedSeat?.seatId === seatId;
+            const otherInfo = floorLockedSeats[seatId];
+
+            let seatClasses = isRecliner 
+              ? "w-9 h-8 md:w-11 md:h-9 rounded-lg border text-xs transition-all relative font-semibold flex items-center justify-center "
+              : "w-7 h-7 md:w-8 md:h-8 rounded border text-xs transition-all relative font-semibold flex items-center justify-center ";
+
+            if (isInspected) {
+              seatClasses += "bg-[#F84464] text-white border-[#D63A56] shadow-md scale-105";
+            } else if (isBooked) {
+              seatClasses += "bg-gray-200 border-gray-300 text-gray-400 cursor-pointer";
+            } else if (isHeld) {
+              seatClasses += "bg-amber-100 border-amber-500 text-amber-900 animate-pulse cursor-pointer shadow-sm";
+            } else {
+              seatClasses += "border-green-600/80 text-green-800 bg-white hover:bg-green-500 hover:text-white cursor-pointer active:scale-95";
+            }
+
+            return (
+              <button
+                key={seatId}
+                onClick={() => {
+                  setInspectedSeat({
+                    seatId,
+                    tier: tierName,
+                    price,
+                    isBooked,
+                    isHeld,
+                    isInspected: true,
+                    holder: otherInfo?.userLabel || 'Customer Session'
+                  });
+                }}
+                className={seatClasses}
+                title={`Seat ${seatId} (₹${price}): ${isBooked ? 'Sold Out' : isHeld ? 'Held by customer (Click to Inspect/Override)' : 'Available'}`}
+              >
+                <span className={isRecliner ? "text-[11px] font-bold" : ""}>{col}</span>
+                {isHeld && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   const handleOpenAddShowModal = () => {
     setScheduleError('');
@@ -639,6 +751,19 @@ const PartnerDashboard = ({ defaultTab }) => {
           {/* Right Header Navigation & Actions */}
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setActiveTab('layout_designer')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer border ${
+                activeTab === 'layout_designer'
+                  ? 'bg-[#F84464] text-white border-[#F84464]'
+                  : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700 hover:text-white'
+              }`}
+              title="Auditorium Layout Designer"
+            >
+              <Armchair className="w-4 h-4 text-pink-400" />
+              <span>Layout Designer</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('scanner')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer border ${
                 activeTab === 'scanner'
@@ -681,6 +806,34 @@ const PartnerDashboard = ({ defaultTab }) => {
             </div>
             <button onClick={() => setSuccessMessage('')} className="text-emerald-700 hover:text-emerald-900 cursor-pointer">
               <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Unconfigured Screens Setup Alert Banner */}
+        {unconfiguredScreens.length > 0 && activeTab !== 'layout_designer' && (
+          <div className="mb-6 bg-gradient-to-r from-rose-50 via-pink-50 to-amber-50 border border-rose-200/80 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs animate-fade-in">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="p-2 bg-[#F84464] text-white rounded-lg shrink-0">
+                <Armchair className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-xs text-slate-900">
+                  Auditorium Layout Setup Required ({unconfiguredScreens.length} screen{unconfiguredScreens.length > 1 ? 's' : ''})
+                </h4>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  {theater?.theaterType === 'single_screen'
+                    ? 'Your single screen theater requires seating rows & columns configuration.'
+                    : `Screens (${unconfiguredScreens.map(s => s.name).join(', ')}) are currently using default templates. Create custom rows, columns, and aisles.`}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab('layout_designer')}
+              className="bg-[#F84464] hover:bg-[#D63A56] text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+            >
+              <Armchair className="w-3.5 h-3.5" />
+              <span>Configure Layout Now</span>
             </button>
           </div>
         )}
@@ -750,6 +903,27 @@ const PartnerDashboard = ({ defaultTab }) => {
             </button>
 
             <button
+              onClick={() => setActiveTab('layout_designer')}
+              className={`pb-3 text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'layout_designer'
+                  ? 'border-b-2 border-[#F84464] text-[#F84464]'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Armchair className="w-4 h-4 text-[#F84464]" />
+              <span>Screen Layouts</span>
+              {unconfiguredScreens.length > 0 ? (
+                <span className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                  {unconfiguredScreens.length} Setup
+                </span>
+              ) : (
+                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                  Active
+                </span>
+              )}
+            </button>
+
+            <button
               onClick={() => setActiveTab('floor_map')}
               className={`pb-3 text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'floor_map'
@@ -757,7 +931,7 @@ const PartnerDashboard = ({ defaultTab }) => {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <span>Live Seat Layout</span>
+              <span>Live Seat Monitoring</span>
             </button>
 
             <button
@@ -915,6 +1089,24 @@ const PartnerDashboard = ({ defaultTab }) => {
           </div>
         )}
 
+        {/* TAB: AUDITORIUM SEATING LAYOUT DESIGNER */}
+        {activeTab === 'layout_designer' && (
+          <div className="animate-fade-in">
+            <ScreenLayoutDesigner
+              theater={partnerData?.theater}
+              onLayoutSaved={(updatedTheater, updatedScreen) => {
+                setPartnerData(prev => ({
+                  ...prev,
+                  theater: updatedTheater || prev.theater
+                }));
+                fetchAllData();
+                setSuccessMessage(`Layout for screen "${updatedScreen?.name || 'auditorium'}" saved successfully!`);
+                setTimeout(() => setSuccessMessage(''), 4000);
+              }}
+            />
+          </div>
+        )}
+
         {/* 4. TAB 2: LIVE SEAT LAYOUT (MATCHING USER BOOKING.JSX EXACTLY) */}
         {activeTab === 'floor_map' && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-6 space-y-6">
@@ -960,6 +1152,26 @@ const PartnerDashboard = ({ defaultTab }) => {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                {/* Layout Config Info & Shortcut */}
+                <div className="flex items-center gap-2">
+                  {hasFloorCustomLayout ? (
+                    <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-md">
+                      Custom ({floorCustomLayout.rows}×{floorCustomLayout.cols})
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md">
+                      Standard Default
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setActiveTab('layout_designer')}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-50 hover:bg-rose-100 border border-rose-200 text-[#F84464] text-xs font-semibold transition-colors"
+                  >
+                    <Layers className="w-3 h-3" />
+                    Edit Layout
+                  </button>
                 </div>
               </div>
             </div>
@@ -1015,189 +1227,67 @@ const PartnerDashboard = ({ defaultTab }) => {
             <div className="overflow-x-auto py-6 flex flex-col items-center bg-slate-50/70 rounded-xl border border-slate-200">
               
               {/* TIER 1: ROYAL RECLINER LOUNGE */}
-              <div className="w-full max-w-4xl mb-3 px-4 sm:px-8 flex items-center justify-between border-b border-rose-100 pb-2">
-                <div className="flex items-center gap-2">
-                  <span className="p-1 rounded bg-amber-50 text-amber-600">
-                    <Armchair className="w-3.5 h-3.5" />
-                  </span>
-                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Royal Recliner Lounge
-                  </span>
-                </div>
-                <span className="text-xs font-bold text-[#F84464]">₹ {floorPriceRecliner}</span>
-              </div>
-              <div className="mb-6 space-y-2">
-                {reclinerRows.map(row => (
-                  <div key={row} className="flex items-center justify-center gap-1.5">
-                    <span className="w-6 text-xs font-bold text-slate-400 text-center">{row}</span>
-                    <div className="flex gap-1.5">
-                      {reclinerCols.map((col, idx) => {
-                        if (col === '') return <div key={`r-sp-${idx}`} className="w-6" />;
-                        const seatId = `${row}${col}`;
-                        const isBooked = floorBookedSeats.includes(seatId);
-                        const isHeld = Boolean(floorLockedSeats[seatId]);
-                        const isInspected = inspectedSeat?.seatId === seatId;
-                        const otherInfo = floorLockedSeats[seatId];
-
-                        let seatClasses = "w-9 h-8 md:w-11 md:h-9 rounded-lg border text-xs transition-all relative font-semibold flex items-center justify-center ";
-                        if (isInspected) {
-                          seatClasses += "bg-[#F84464] text-white border-[#D63A56] shadow-md scale-105";
-                        } else if (isBooked) {
-                          seatClasses += "bg-gray-200 border-gray-300 text-gray-400 cursor-pointer";
-                        } else if (isHeld) {
-                          seatClasses += "bg-amber-100 border-amber-500 text-amber-900 animate-pulse cursor-pointer shadow-sm";
-                        } else {
-                          seatClasses += "border-green-600/80 text-green-800 bg-white hover:bg-green-500 hover:text-white cursor-pointer active:scale-95";
-                        }
-
-                        return (
-                          <button
-                            key={seatId}
-                            onClick={() => {
-                              setInspectedSeat({
-                                seatId,
-                                tier: 'Royal Recliner Lounge',
-                                price: floorPriceRecliner,
-                                isBooked,
-                                isHeld,
-                                isInspected: true,
-                                holder: otherInfo?.userLabel || 'Customer Session'
-                              });
-                            }}
-                            className={seatClasses}
-                            title={`Seat ${seatId} (₹${floorPriceRecliner}): ${isBooked ? 'Sold Out' : isHeld ? 'Held by customer (Click to Inspect/Override)' : 'Available'}`}
-                          >
-                            <span className="text-[11px] font-bold">{col}</span>
-                            {isHeld && (
-                              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-                            )}
-                          </button>
-                        );
-                      })}
+              {activeFloorReclinerRows.length > 0 && (
+                <div className="w-full flex flex-col items-center mb-6">
+                  <div className="w-full max-w-4xl mb-3 px-4 sm:px-8 flex items-center justify-between border-b border-rose-100 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1 rounded bg-amber-50 text-amber-600">
+                        <Armchair className="w-3.5 h-3.5" />
+                      </span>
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Royal Recliner Lounge
+                      </span>
                     </div>
+                    <span className="text-xs font-bold text-[#F84464]">₹ {floorPriceRecliner}</span>
                   </div>
-                ))}
-              </div>
+                  <div className="space-y-2">
+                    {activeFloorReclinerRows.map(row => renderFloorSeatRow(row, 'Royal Recliner Lounge', floorPriceRecliner, true))}
+                  </div>
+                </div>
+              )}
 
               {/* TIER 2: PRIME CIRCLE */}
-              <div className="w-full max-w-4xl mb-3 px-4 sm:px-8 flex items-center justify-between border-b border-slate-200 pb-2">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Prime Circle
-                </span>
-                <span className="text-xs font-bold text-slate-900">₹ {floorPricePremium}</span>
-              </div>
-              <div className="mb-6 space-y-2">
-                {primeRows.map(row => (
-                  <div key={row} className="flex items-center justify-center gap-1.5">
-                    <span className="w-6 text-xs font-bold text-slate-400 text-center">{row}</span>
-                    <div className="flex gap-1.5">
-                      {cols.map((col, idx) => {
-                        if (col === '') return <div key={`p-sp-${idx}`} className="w-4" />;
-                        const seatId = `${row}${col}`;
-                        const isBooked = floorBookedSeats.includes(seatId);
-                        const isHeld = Boolean(floorLockedSeats[seatId]);
-                        const isInspected = inspectedSeat?.seatId === seatId;
-                        const otherInfo = floorLockedSeats[seatId];
-
-                        let seatClasses = "w-7 h-7 md:w-8 md:h-8 rounded border text-xs transition-all relative font-semibold flex items-center justify-center ";
-                        if (isInspected) {
-                          seatClasses += "bg-[#F84464] text-white border-[#D63A56] shadow-md scale-105";
-                        } else if (isBooked) {
-                          seatClasses += "bg-gray-200 border-gray-300 text-gray-400 cursor-pointer";
-                        } else if (isHeld) {
-                          seatClasses += "bg-amber-100 border-amber-500 text-amber-900 animate-pulse cursor-pointer shadow-sm";
-                        } else {
-                          seatClasses += "border-green-600/80 text-green-800 bg-white hover:bg-green-500 hover:text-white cursor-pointer active:scale-95";
-                        }
-
-                        return (
-                          <button
-                            key={seatId}
-                            onClick={() => {
-                              setInspectedSeat({
-                                seatId,
-                                tier: 'Prime Circle',
-                                price: floorPricePremium,
-                                isBooked,
-                                isHeld,
-                                isInspected: true,
-                                holder: otherInfo?.userLabel || 'Customer Session'
-                              });
-                            }}
-                            className={seatClasses}
-                            title={`Seat ${seatId} (₹${floorPricePremium}): ${isBooked ? 'Sold Out' : isHeld ? 'Held by customer' : 'Available'}`}
-                          >
-                            <span>{col}</span>
-                            {isHeld && (
-                              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
+              {activeFloorPrimeRows.length > 0 && (
+                <div className="w-full flex flex-col items-center mb-6">
+                  <div className="w-full max-w-4xl mb-3 px-4 sm:px-8 flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Prime Circle
+                    </span>
+                    <span className="text-xs font-bold text-slate-900">₹ {floorPricePremium}</span>
                   </div>
-                ))}
-              </div>
+                  <div className="space-y-2">
+                    {activeFloorPrimeRows.map(row => renderFloorSeatRow(row, 'Prime Circle', floorPricePremium, false))}
+                  </div>
+                </div>
+              )}
 
               {/* TIER 3: CLASSIC SECTION */}
-              <div className="w-full max-w-4xl mb-3 px-4 sm:px-8 flex items-center justify-between border-b border-slate-200 pb-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Classic Section
-                </span>
-                <span className="text-xs font-bold text-slate-600">₹ {floorPriceExecutive}</span>
-              </div>
-              <div className="space-y-2">
-                {classicRows.map(row => (
-                  <div key={row} className="flex items-center justify-center gap-1.5">
-                    <span className="w-6 text-xs font-bold text-slate-400 text-center">{row}</span>
-                    <div className="flex gap-1.5">
-                      {cols.map((col, idx) => {
-                        if (col === '') return <div key={`c-sp-${idx}`} className="w-4" />;
-                        const seatId = `${row}${col}`;
-                        const isBooked = floorBookedSeats.includes(seatId);
-                        const isHeld = Boolean(floorLockedSeats[seatId]);
-                        const isInspected = inspectedSeat?.seatId === seatId;
-                        const otherInfo = floorLockedSeats[seatId];
-
-                        let seatClasses = "w-7 h-7 md:w-8 md:h-8 rounded border text-xs transition-all relative font-semibold flex items-center justify-center ";
-                        if (isInspected) {
-                          seatClasses += "bg-[#F84464] text-white border-[#D63A56] shadow-md scale-105";
-                        } else if (isBooked) {
-                          seatClasses += "bg-gray-200 border-gray-300 text-gray-400 cursor-pointer";
-                        } else if (isHeld) {
-                          seatClasses += "bg-amber-100 border-amber-500 text-amber-900 animate-pulse cursor-pointer shadow-sm";
-                        } else {
-                          seatClasses += "border-green-600/80 text-green-800 bg-white hover:bg-green-500 hover:text-white cursor-pointer active:scale-95";
-                        }
-
-                        return (
-                          <button
-                            key={seatId}
-                            onClick={() => {
-                              setInspectedSeat({
-                                seatId,
-                                tier: 'Classic Section',
-                                price: floorPriceExecutive,
-                                isBooked,
-                                isHeld,
-                                isInspected: true,
-                                holder: otherInfo?.userLabel || 'Customer Session'
-                              });
-                            }}
-                            className={seatClasses}
-                            title={`Seat ${seatId} (₹${floorPriceExecutive}): ${isBooked ? 'Sold Out' : isHeld ? 'Held by customer' : 'Available'}`}
-                          >
-                            <span>{col}</span>
-                            {isHeld && (
-                              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
+              {activeFloorClassicRows.length > 0 && (
+                <div className="w-full flex flex-col items-center mb-6">
+                  <div className="w-full max-w-4xl mb-3 px-4 sm:px-8 flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Classic Section
+                    </span>
+                    <span className="text-xs font-bold text-slate-600">₹ {floorPriceExecutive}</span>
                   </div>
-                ))}
-              </div>
+                  <div className="space-y-2">
+                    {activeFloorClassicRows.map(row => renderFloorSeatRow(row, 'Classic Section', floorPriceExecutive, false))}
+                  </div>
+                </div>
+              )}
+
+              {/* FALLBACK: UNTIERED CUSTOM LAYOUT */}
+              {hasFloorCustomLayout && activeFloorReclinerRows.length === 0 && activeFloorPrimeRows.length === 0 && activeFloorClassicRows.length === 0 && (
+                <div className="w-full flex flex-col items-center space-y-2">
+                  <div className="w-full max-w-4xl mb-3 px-4 sm:px-8 flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Auditorium Seats
+                    </span>
+                    <span className="text-xs font-bold text-slate-900">₹ {floorPricePremium}</span>
+                  </div>
+                  {floorCustomRows.map(row => renderFloorSeatRow(row, 'Standard Seat', floorPricePremium, false))}
+                </div>
+              )}
 
             </div>
 

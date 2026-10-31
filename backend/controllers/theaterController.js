@@ -385,6 +385,103 @@ const partnerAddMovie = async (req, res, next) => {
   }
 };
 
+// 11. Theater Partner Portal: Save or Update Screen Seating Layout
+const saveScreenLayout = async (req, res, next) => {
+  try {
+    let theaterId = req.user.theaterId;
+    let theater = null;
+    if (theaterId) {
+      theater = await Theater.findById(theaterId);
+    } else {
+      theater = await Theater.findOne({ owner: req.user.id });
+    }
+
+    if (!theater) {
+      theater = await Theater.findOne({});
+    }
+
+    if (!theater) {
+      return res.status(404).json({ success: false, msg: 'Theater not found' });
+    }
+
+    // Ensure screens array is initialized if missing
+    if (!theater.screens || theater.screens.length === 0) {
+      if (theater.theaterType === 'single_screen') {
+        theater.screens = [
+          { screenNumber: 1, name: 'Main Screen', screenType: 'Dolby Atmos', capacity: 250 }
+        ];
+      } else {
+        theater.screens = [
+          { screenNumber: 1, name: 'Audi 1', screenType: 'IMAX 4K Laser', capacity: 280 },
+          { screenNumber: 2, name: 'Audi 2', screenType: 'Dolby Atmos', capacity: 200 },
+          { screenNumber: 3, name: 'Audi 3', screenType: 'Standard 2D', capacity: 150 }
+        ];
+      }
+    }
+
+    const screenNumberParam = req.params.screenNumber
+      ? Number(req.params.screenNumber)
+      : (req.body.screenNumber ? Number(req.body.screenNumber) : 1);
+    const screenNameParam = req.body.screenName || req.body.name;
+
+    // Find screen in theater
+    let screen = theater.screens.find(s => s.screenNumber === screenNumberParam);
+    if (!screen && screenNameParam) {
+      screen = theater.screens.find(s => s.name?.toLowerCase() === screenNameParam.toLowerCase());
+    }
+    if (!screen) {
+      screen = theater.screens[0];
+    }
+
+    const {
+      rows = 8,
+      cols = 12,
+      deletedSeats = [],
+      tierConfig = {}
+    } = req.body;
+
+    const rowLabels = req.body.rowLabels && req.body.rowLabels.length === rows
+      ? req.body.rowLabels
+      : Array.from({ length: rows }, (_, i) => String.fromCharCode(65 + i));
+
+    const totalSpots = rows * cols;
+    const activeCapacity = Math.max(1, totalSpots - (deletedSeats ? deletedSeats.length : 0));
+
+    let finalTierConfig = tierConfig || {};
+    if (!finalTierConfig.reclinerRows && !finalTierConfig.premiumRows && !finalTierConfig.executiveRows) {
+      const reclinerCount = Math.max(1, Math.floor(rows * 0.25));
+      const premiumCount = Math.max(1, Math.floor(rows * 0.45));
+      finalTierConfig = {
+        reclinerRows: rowLabels.slice(0, reclinerCount),
+        premiumRows: rowLabels.slice(reclinerCount, reclinerCount + premiumCount),
+        executiveRows: rowLabels.slice(reclinerCount + premiumCount)
+      };
+    }
+
+    screen.capacity = activeCapacity;
+    screen.layout = {
+      rows,
+      cols,
+      rowLabels,
+      deletedSeats: Array.from(new Set(deletedSeats || [])),
+      tierConfig: finalTierConfig,
+      updatedAt: new Date()
+    };
+
+    theater.markModified('screens');
+    await theater.save();
+
+    res.json({
+      success: true,
+      msg: `Seating layout for screen "${screen.name}" updated successfully (${activeCapacity} active seats)`,
+      screen,
+      theater
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getAllTheaters,
   getShowtimeById,
@@ -395,5 +492,6 @@ module.exports = {
   addPartnerShowtime,
   updateShowtimePrice,
   deleteShowtime,
-  partnerAddMovie
+  partnerAddMovie,
+  saveScreenLayout
 };

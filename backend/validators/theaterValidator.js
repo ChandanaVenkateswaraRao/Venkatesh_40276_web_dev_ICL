@@ -30,8 +30,24 @@ const partnerAddMovieSchema = z.object({
   trailerUrl: z.string().trim().optional()
 });
 
+const saveScreenLayoutSchema = z.object({
+  screenNumber: z.coerce.number().optional(),
+  screenName: z.string().trim().optional(),
+  name: z.string().trim().optional(),
+  rows: z.coerce.number().min(1, 'At least 1 row is required').max(30, 'Maximum 30 rows allowed'),
+  cols: z.coerce.number().min(1, 'At least 1 column is required').max(40, 'Maximum 40 columns allowed'),
+  rowLabels: z.array(z.string()).optional(),
+  deletedSeats: z.array(z.string()).optional().default([]),
+  tierConfig: z.object({
+    reclinerRows: z.array(z.string()).optional().default([]),
+    premiumRows: z.array(z.string()).optional().default([]),
+    executiveRows: z.array(z.string()).optional().default([])
+  }).optional()
+});
+
 module.exports = {
   createShowtimeSchema,
   updatePriceSchema,
-  partnerAddMovieSchema
+  partnerAddMovieSchema,
+  saveScreenLayoutSchema
 };

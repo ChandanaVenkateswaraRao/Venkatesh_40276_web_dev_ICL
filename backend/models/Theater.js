@@ -18,6 +18,31 @@ const ScreenSchema = new mongoose.Schema({
   capacity: {
     type: Number,
     default: 150
+  },
+  layout: {
+    rows: {
+      type: Number,
+      default: 8
+    },
+    cols: {
+      type: Number,
+      default: 12
+    },
+    rowLabels: [{
+      type: String
+    }],
+    deletedSeats: [{
+      type: String
+    }],
+    tierConfig: {
+      reclinerRows: [{ type: String }],
+      premiumRows: [{ type: String }],
+      executiveRows: [{ type: String }]
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now
+    }
   }
 }, { _id: false });
 
