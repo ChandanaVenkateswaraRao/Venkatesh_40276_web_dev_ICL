@@ -422,34 +422,21 @@ const Booking = () => {
   const hasCustomLayout = Boolean(customLayout && customLayout.rows && customLayout.cols);
 
   // Dynamic Layout Rows & Columns
-  const customRows = useMemo(() => {
-    if (!hasCustomLayout) return [];
-    if (customLayout.rowLabels && customLayout.rowLabels.length === customLayout.rows) {
-      return customLayout.rowLabels;
-    }
-    return Array.from({ length: customLayout.rows }, (_, i) => String.fromCharCode(65 + i));
-  }, [hasCustomLayout, customLayout]);
+  const customRows = (hasCustomLayout && customLayout.rowLabels && customLayout.rowLabels.length === customLayout.rows)
+    ? customLayout.rowLabels
+    : (hasCustomLayout ? Array.from({ length: customLayout.rows }, (_, i) => String.fromCharCode(65 + i)) : []);
 
-  const customCols = useMemo(() => {
-    if (!hasCustomLayout) return [];
-    return Array.from({ length: customLayout.cols }, (_, i) => i + 1);
-  }, [hasCustomLayout, customLayout]);
+  const customCols = hasCustomLayout
+    ? Array.from({ length: customLayout.cols }, (_, i) => i + 1)
+    : [];
 
-  const deletedSeatsSet = useMemo(() => {
-    return hasCustomLayout ? new Set(customLayout.deletedSeats || []) : new Set();
-  }, [hasCustomLayout, customLayout]);
+  const deletedSeatsSet = hasCustomLayout
+    ? new Set(customLayout.deletedSeats || [])
+    : new Set();
 
-  const customReclinerRows = useMemo(() => {
-    return hasCustomLayout ? (customLayout.tierConfig?.reclinerRows || []) : [];
-  }, [hasCustomLayout, customLayout]);
-
-  const customPrimeRows = useMemo(() => {
-    return hasCustomLayout ? (customLayout.tierConfig?.premiumRows || []) : [];
-  }, [hasCustomLayout, customLayout]);
-
-  const customClassicRows = useMemo(() => {
-    return hasCustomLayout ? (customLayout.tierConfig?.executiveRows || []) : [];
-  }, [hasCustomLayout, customLayout]);
+  const customReclinerRows = (hasCustomLayout && customLayout.tierConfig?.reclinerRows) || [];
+  const customPrimeRows = (hasCustomLayout && customLayout.tierConfig?.premiumRows) || [];
+  const customClassicRows = (hasCustomLayout && customLayout.tierConfig?.executiveRows) || [];
 
   // Default Fallback Layout if screen has no customized layout
   const reclinerRows = ['A', 'B'];

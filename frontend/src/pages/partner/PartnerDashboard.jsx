@@ -556,34 +556,21 @@ const PartnerDashboard = ({ defaultTab }) => {
   const floorCustomLayout = floorMatchedScreen?.layout;
   const hasFloorCustomLayout = Boolean(floorCustomLayout && floorCustomLayout.rows && floorCustomLayout.cols);
 
-  const floorCustomRows = useMemo(() => {
-    if (!hasFloorCustomLayout) return [];
-    if (floorCustomLayout.rowLabels && floorCustomLayout.rowLabels.length === floorCustomLayout.rows) {
-      return floorCustomLayout.rowLabels;
-    }
-    return Array.from({ length: floorCustomLayout.rows }, (_, i) => String.fromCharCode(65 + i));
-  }, [hasFloorCustomLayout, floorCustomLayout]);
+  const floorCustomRows = (hasFloorCustomLayout && floorCustomLayout.rowLabels && floorCustomLayout.rowLabels.length === floorCustomLayout.rows)
+    ? floorCustomLayout.rowLabels
+    : (hasFloorCustomLayout ? Array.from({ length: floorCustomLayout.rows }, (_, i) => String.fromCharCode(65 + i)) : []);
 
-  const floorCustomCols = useMemo(() => {
-    if (!hasFloorCustomLayout) return [];
-    return Array.from({ length: floorCustomLayout.cols }, (_, i) => i + 1);
-  }, [hasFloorCustomLayout, floorCustomLayout]);
+  const floorCustomCols = hasFloorCustomLayout
+    ? Array.from({ length: floorCustomLayout.cols }, (_, i) => i + 1)
+    : [];
 
-  const floorDeletedSeatsSet = useMemo(() => {
-    return hasFloorCustomLayout ? new Set(floorCustomLayout.deletedSeats || []) : new Set();
-  }, [hasFloorCustomLayout, floorCustomLayout]);
+  const floorDeletedSeatsSet = hasFloorCustomLayout
+    ? new Set(floorCustomLayout.deletedSeats || [])
+    : new Set();
 
-  const floorCustomReclinerRows = useMemo(() => {
-    return hasFloorCustomLayout ? (floorCustomLayout.tierConfig?.reclinerRows || []) : [];
-  }, [hasFloorCustomLayout, floorCustomLayout]);
-
-  const floorCustomPrimeRows = useMemo(() => {
-    return hasFloorCustomLayout ? (floorCustomLayout.tierConfig?.premiumRows || []) : [];
-  }, [hasFloorCustomLayout, floorCustomLayout]);
-
-  const floorCustomClassicRows = useMemo(() => {
-    return hasFloorCustomLayout ? (floorCustomLayout.tierConfig?.executiveRows || []) : [];
-  }, [hasFloorCustomLayout, floorCustomLayout]);
+  const floorCustomReclinerRows = (hasFloorCustomLayout && floorCustomLayout.tierConfig?.reclinerRows) || [];
+  const floorCustomPrimeRows = (hasFloorCustomLayout && floorCustomLayout.tierConfig?.premiumRows) || [];
+  const floorCustomClassicRows = (hasFloorCustomLayout && floorCustomLayout.tierConfig?.executiveRows) || [];
 
   // Seating Layout Tiers matching user Booking.jsx exactly
   const reclinerRows = ['A', 'B'];
