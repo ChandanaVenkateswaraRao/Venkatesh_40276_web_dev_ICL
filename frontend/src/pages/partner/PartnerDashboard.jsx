@@ -540,6 +540,8 @@ const PartnerDashboard = ({ defaultTab }) => {
             { screenNumber: 3, name: 'Screen 3', screenType: 'IMAX 2D', capacity: 250 }
           ]);
 
+  const unconfiguredScreens = theaterScreens.filter(s => !s.layout || !s.layout.rows || !s.layout.cols);
+
   const currentConflicts = checkScheduleConflicts();
 
   // Selected floor showtime & matched screen layout
