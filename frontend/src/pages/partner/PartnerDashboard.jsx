@@ -801,28 +801,28 @@ const PartnerDashboard = ({ defaultTab }) => {
 
         {/* Unconfigured Screens Setup Alert Banner */}
         {unconfiguredScreens.length > 0 && activeTab !== 'layout_designer' && (
-          <div className="mb-6 bg-gradient-to-r from-rose-50 via-pink-50 to-amber-50 border border-rose-200/80 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs animate-fade-in">
+          <div className="mb-6 bg-white border border-slate-200 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-fade-in">
             <div className="flex items-start sm:items-center gap-3">
-              <div className="p-2 bg-[#F84464] text-white rounded-lg shrink-0">
+              <div className="p-2 bg-slate-900 text-white rounded-lg shrink-0">
                 <Armchair className="w-5 h-5" />
               </div>
               <div>
                 <h4 className="font-bold text-xs text-slate-900">
                   Auditorium Layout Setup Required ({unconfiguredScreens.length} screen{unconfiguredScreens.length > 1 ? 's' : ''})
                 </h4>
-                <p className="text-[11px] text-slate-600 mt-0.5">
+                <p className="text-[11px] text-slate-500 mt-0.5">
                   {theater?.theaterType === 'single_screen'
                     ? 'Your single screen theater requires seating rows & columns configuration.'
-                    : `Screens (${unconfiguredScreens.map(s => s.name).join(', ')}) are currently using default templates. Create custom rows, columns, and aisles.`}
+                    : `Screens (${unconfiguredScreens.map(s => s.name).join(', ')}) are currently using default templates. Configure rows, columns, and walkways.`}
                 </p>
               </div>
             </div>
             <button
               onClick={() => setActiveTab('layout_designer')}
-              className="bg-[#F84464] hover:bg-[#D63A56] text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+              className="bg-[#F84464] hover:bg-[#d83552] text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
             >
               <Armchair className="w-3.5 h-3.5" />
-              <span>Configure Layout Now</span>
+              <span>Configure Layout</span>
             </button>
           </div>
         )}
