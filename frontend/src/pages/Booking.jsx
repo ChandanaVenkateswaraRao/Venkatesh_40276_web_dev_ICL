@@ -406,15 +406,9 @@ const Booking = () => {
     }
   };
 
-  if (!movie || !showtime) return (
-    <div className="flex justify-center items-center h-screen bg-[#F5F5F5]">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#F84464]"></div>
-    </div>
-  );
-
   // Seating Tiers & Pricing
-  const pricePremium = showtime.pricePremium || 350;
-  const priceExecutive = showtime.priceExecutive || 200;
+  const pricePremium = showtime?.pricePremium || 350;
+  const priceExecutive = showtime?.priceExecutive || 200;
   const priceRecliner = pricePremium + 120; // Royal Recliner Lounge Tier
 
   // Screen and Custom Layout Detection
@@ -570,6 +564,14 @@ const Booking = () => {
       </div>
     );
   };
+
+  if (!movie || !showtime) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-[#F5F5F5]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#F84464]"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#F5F5F5] min-h-screen pb-24">

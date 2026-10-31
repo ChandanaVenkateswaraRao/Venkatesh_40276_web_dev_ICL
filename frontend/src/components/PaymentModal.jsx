@@ -2,18 +2,17 @@ import { useState, useEffect } from 'react';
 import { X, ShieldCheck, QrCode, CreditCard, Building2, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
 
 const PaymentModal = ({ isOpen, onClose, totalAmount, movieTitle, onConfirmPayment }) => {
-  if (!isOpen) return null;
-
   const [activeTab, setActiveTab] = useState('upi'); // 'upi' | 'card' | 'netbanking'
   const [processing, setProcessing] = useState(false);
   const [countdown, setCountdown] = useState(300); // 5 mins
 
   useEffect(() => {
+    if (!isOpen) return;
     const timer = setInterval(() => {
       setCountdown(prev => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isOpen]);
 
   const formatCountdown = (secs) => {
     const m = Math.floor(secs / 60);
@@ -32,6 +31,8 @@ const PaymentModal = ({ isOpen, onClose, totalAmount, movieTitle, onConfirmPayme
       });
     }, 1200);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
