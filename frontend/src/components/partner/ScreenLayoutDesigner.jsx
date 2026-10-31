@@ -800,3 +800,4 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
 };
 
 export default ScreenLayoutDesigner;
+
