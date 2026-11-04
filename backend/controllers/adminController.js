@@ -24,9 +24,10 @@ const getAllBookings = async (req, res, next) => {
 const getDashboardStats = async (req, res, next) => {
   try {
     const totalMovies = await Movie.countDocuments();
-    const totalBookings = await Booking.countDocuments();
+    const totalBookings = await Booking.countDocuments({ status: { $ne: 'cancelled' } });
 
     const revenueAggregation = await Booking.aggregate([
+      { $match: { status: { $ne: 'cancelled' } } },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
 

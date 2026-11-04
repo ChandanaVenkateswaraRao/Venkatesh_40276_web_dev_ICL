@@ -40,6 +40,18 @@ const BookingSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  status: {
+    type: String,
+    enum: ['confirmed', 'cancelled'],
+    default: 'confirmed',
+  },
+  cancelledAt: {
+    type: Date,
+  },
+  refundAmount: {
+    type: Number,
+    default: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

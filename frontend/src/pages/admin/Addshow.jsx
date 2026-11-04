@@ -351,8 +351,8 @@ const Addshow = () => {
               </div>
             </div>
 
-            {/* Genre, Language, Rating */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Genre & Language */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
                   Genre *
@@ -377,22 +377,6 @@ const Addshow = () => {
                   placeholder="e.g. Telugu, Hindi"
                   value={movieForm.language}
                   onChange={(e) => setMovieForm({ ...movieForm, language: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#F84464]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Rating (Out of 10) *
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="10"
-                  required
-                  value={movieForm.rating}
-                  onChange={(e) => setMovieForm({ ...movieForm, rating: e.target.value })}
                   className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#F84464]"
                 />
               </div>

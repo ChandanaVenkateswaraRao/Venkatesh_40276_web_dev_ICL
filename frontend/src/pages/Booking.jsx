@@ -6,6 +6,7 @@ import FoodAndBeverageModal from '../components/FoodAndBeverageModal';
 import TicketPassModal from '../components/TicketPassModal';
 import getSocket from '../utils/socket';
 import { API_BASE_URL } from '../api/config';
+import { isShowtimeExpired } from '../utils/timeUtils';
 
 const Booking = () => {
   const { id } = useParams(); // showtimeId
@@ -232,6 +233,10 @@ const Booking = () => {
 
   // 3. Toggle & Lock Seat with Real-time Broadcast
   const toggleSeat = (seatId) => {
+    if (isShowtimeExpired(showtime?.date, showtime?.time)) {
+      pushAlert('This showtime has ended. Online booking is closed.', 'lock');
+      return;
+    }
     if (bookedSeats.includes(seatId)) return;
     if (lockedByOthers[seatId]) {
       const holder = lockedByOthers[seatId]?.userLabel || 'another customer';
@@ -471,6 +476,8 @@ const Booking = () => {
 
   const renderSeatRow = (row, isRecliner = false) => {
     const colList = hasCustomLayout ? customCols : (isRecliner ? reclinerCols : cols);
+    const isExpired = isShowtimeExpired(showtime?.date, showtime?.time);
+    let activeSeatCounter = 0;
 
     return (
       <div key={row} className={`flex items-center justify-center gap-1.5 ${isRecliner ? 'mb-3' : 'mb-2'}`}>
@@ -481,12 +488,15 @@ const Booking = () => {
               return <div key={`spacer-${idx}`} className={isRecliner ? 'w-6' : 'w-4'} />;
             }
             
-            const seatId = `${row}${col}`;
+            const gridKey = `${row}${col}`;
 
-            if (hasCustomLayout && deletedSeatsSet.has(seatId)) {
+            if (hasCustomLayout && deletedSeatsSet.has(gridKey)) {
               // Deleted seat / aisle walkway
-              return <div key={`aisle-${seatId}`} className="w-7 h-7 md:w-8 md:h-8" />;
+              return <div key={`aisle-${gridKey}`} className="w-7 h-7 md:w-8 md:h-8" />;
             }
+
+            const continuousNum = hasCustomLayout ? ++activeSeatCounter : col;
+            const seatId = `${row}${continuousNum}`;
 
             const isSelected = selectedSeats.includes(seatId);
             const isBooked = bookedSeats.includes(seatId);
@@ -501,7 +511,9 @@ const Booking = () => {
               seatClasses += "w-7 h-7 md:w-8 md:h-8 flex items-center justify-center ";
             }
 
-            if (isBooked) {
+            if (isExpired) {
+              seatClasses += "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-60";
+            } else if (isBooked) {
               seatClasses += "bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed";
             } else if (isSelected) {
               seatClasses += "bg-[#1EA83C] text-white border-[#1EA83C] shadow-md scale-105";
@@ -516,11 +528,13 @@ const Booking = () => {
             return (
               <button
                 key={seatId}
-                disabled={isBooked || isLockedByOther}
+                disabled={isExpired || isBooked || isLockedByOther}
                 onClick={() => toggleSeat(seatId)}
                 className={seatClasses}
                 title={
-                  isBooked 
+                  isExpired
+                    ? `Show has ended • Booking closed`
+                    : isBooked 
                     ? `Seat ${seatId} is Sold Out` 
                     : isLockedByOther 
                     ? `Seat ${seatId} is held by ${otherInfo?.userLabel || 'another customer'} in real-time` 
@@ -531,10 +545,10 @@ const Booking = () => {
               >
                 {isRecliner ? (
                   <span className="text-[11px] font-bold flex items-center gap-0.5">
-                    {col}
+                    {continuousNum}
                   </span>
                 ) : (
-                  col
+                  continuousNum
                 )}
                 
                 {isLockedByOther && (
@@ -595,6 +609,26 @@ const Booking = () => {
           </div>
         </div>
       </div>
+
+      {/* Expired Showtime Notice Banner */}
+      {isShowtimeExpired(showtime?.date, showtime?.time) && (
+        <div className="bg-rose-50 border-b border-rose-200 py-3 px-4 shadow-xs">
+          <div className="container mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-3 text-rose-900 text-xs font-semibold">
+            <div className="flex items-center gap-2.5">
+              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+              <span>
+                <strong>Showtime Ended:</strong> The scheduled start time for this show has passed. Online seat selection and ticket booking are closed.
+              </span>
+            </div>
+            <button
+              onClick={() => navigate(`/buytickets/${movie._id}`)}
+              className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+            >
+              Select Another Showtime
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* PROMINENT REAL-TIME CONCURRENCY HUD */}
       <div className="bg-gradient-to-r from-slate-900 via-[#1F2533] to-slate-900 text-white border-b border-slate-800 shadow-inner py-2.5 px-4">
@@ -777,7 +811,7 @@ const Booking = () => {
       </div>
 
       {/* Bottom Sticky Payment Bar */}
-      {selectedSeats.length === allowedQuantity && (
+      {selectedSeats.length === allowedQuantity && !isShowtimeExpired(showtime?.date, showtime?.time) && (
         <div className="fixed bottom-0 left-0 w-full bg-white shadow-[0_-4px_15px_rgba(0,0,0,0.08)] border-t z-40 animate-fade-in-up">
           <div className="container mx-auto px-4 py-4 flex justify-between items-center max-w-5xl">
             <div className="text-gray-800 text-sm md:text-base flex items-center flex-wrap gap-1">

@@ -21,8 +21,9 @@ router.post('/login', validate(loginSchema), authController.login);
 router.post('/partner/register', validate(partnerRegisterSchema), authController.partnerRegister);
 router.post('/partner/login', validate(partnerLoginSchema), authController.partnerLogin);
 
-// Customer Profile
+// Customer Profile & Booking Actions
 router.get('/profile', auth, authController.getProfile);
 router.put('/profile', auth, validate(updateProfileSchema), authController.updateProfile);
+router.post('/bookings/:id/cancel', auth, authController.cancelBooking);
 
 module.exports = router;

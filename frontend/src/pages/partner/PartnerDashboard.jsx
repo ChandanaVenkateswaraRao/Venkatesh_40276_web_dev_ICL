@@ -594,6 +594,7 @@ const PartnerDashboard = ({ defaultTab }) => {
 
   const renderFloorSeatRow = (row, tierName, price, isRecliner = false) => {
     const colList = hasFloorCustomLayout ? floorCustomCols : (isRecliner ? reclinerCols : cols);
+    let activeRowSeatCounter = 0;
     return (
       <div key={row} className="flex items-center justify-center gap-1.5">
         <span className="w-6 text-xs font-bold text-slate-400 text-center">{row}</span>
@@ -602,12 +603,15 @@ const PartnerDashboard = ({ defaultTab }) => {
             if (col === '') {
               return <div key={`spacer-${idx}`} className={isRecliner ? 'w-6' : 'w-4'} />;
             }
-            const seatId = `${row}${col}`;
+            const gridKey = `${row}${col}`;
 
-            if (hasFloorCustomLayout && floorDeletedSeatsSet.has(seatId)) {
+            if (hasFloorCustomLayout && floorDeletedSeatsSet.has(gridKey)) {
               // Deleted seat / aisle walkway
-              return <div key={`aisle-${seatId}`} className={isRecliner ? 'w-9 h-8 md:w-11 md:h-9' : 'w-7 h-7 md:w-8 md:h-8'} />;
+              return <div key={`aisle-${gridKey}`} className={isRecliner ? 'w-9 h-8 md:w-11 md:h-9' : 'w-7 h-7 md:w-8 md:h-8'} />;
             }
+
+            const continuousNum = hasFloorCustomLayout ? ++activeRowSeatCounter : col;
+            const seatId = `${row}${continuousNum}`;
 
             const isBooked = floorBookedSeats.includes(seatId);
             const isHeld = Boolean(floorLockedSeats[seatId]);
@@ -645,7 +649,7 @@ const PartnerDashboard = ({ defaultTab }) => {
                 className={seatClasses}
                 title={`Seat ${seatId} (₹${price}): ${isBooked ? 'Sold Out' : isHeld ? 'Held by customer (Click to Inspect/Override)' : 'Available'}`}
               >
-                <span className={isRecliner ? "text-[11px] font-bold" : ""}>{col}</span>
+                <span className={isRecliner ? "text-[11px] font-bold" : ""}>{continuousNum}</span>
                 {isHeld && (
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
                 )}
@@ -1398,34 +1402,17 @@ const PartnerDashboard = ({ defaultTab }) => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Audience Rating (out of 10)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="1"
-                    max="10"
-                    value={movieForm.rating}
-                    onChange={(e) => setMovieForm({ ...movieForm, rating: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 outline-none focus:border-[#F84464]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    YouTube Trailer URL
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://www.youtube.com/embed/..."
-                    value={movieForm.trailerUrl}
-                    onChange={(e) => setMovieForm({ ...movieForm, trailerUrl: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 outline-none focus:border-[#F84464]"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  YouTube Trailer URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://www.youtube.com/embed/..."
+                  value={movieForm.trailerUrl}
+                  onChange={(e) => setMovieForm({ ...movieForm, trailerUrl: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 outline-none focus:border-[#F84464]"
+                />
               </div>
 
               <button

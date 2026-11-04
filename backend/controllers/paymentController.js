@@ -87,9 +87,61 @@ const sendTicketConfirmationEmail = async (booking, movie, showtime, user, seats
   }
 };
 
+// Helper: Parse showtime date and time to Date object
+const parseShowtimeDateTime = (dateInput, timeStr) => {
+  if (!dateInput || !timeStr) return null;
+  let year, month, day;
+  if (dateInput instanceof Date) {
+    year = dateInput.getFullYear();
+    month = dateInput.getMonth();
+    day = dateInput.getDate();
+  } else if (typeof dateInput === 'string') {
+    const datePart = dateInput.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length === 3) {
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      day = parseInt(parts[2], 10);
+    } else {
+      const d = new Date(dateInput);
+      year = d.getFullYear();
+      month = d.getMonth();
+      day = d.getDate();
+    }
+  }
+
+  let hours = 0;
+  let minutes = 0;
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (match) {
+    hours = parseInt(match[1], 10);
+    minutes = parseInt(match[2], 10);
+    const period = match[3] ? match[3].toUpperCase() : null;
+    if (period === 'PM' && hours < 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+  }
+
+  return new Date(year, month, day, hours, minutes, 0, 0);
+};
+
+// Helper: Check if showtime has expired
+const isShowtimeExpired = (dateInput, timeStr) => {
+  const dt = parseShowtimeDateTime(dateInput, timeStr);
+  if (!dt) return false;
+  return dt.getTime() <= Date.now();
+};
+
 // 1. Create Razorpay Payment Order
 const createOrder = async (req, res, next) => {
   try {
+    const { showtimeId } = req.body;
+    if (showtimeId) {
+      const showtime = await Showtime.findById(showtimeId);
+      if (showtime && isShowtimeExpired(showtime.date, showtime.time)) {
+        return res.status(400).json({ success: false, message: 'This showtime has already passed. Booking is closed.' });
+      }
+    }
+
     const instance = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID || 'rzp_live_SZW126jzeHpLC8',
       key_secret: process.env.RAZORPAY_KEY_SECRET || 'YOUR_TEST_KEY_SECRET',
@@ -122,6 +174,13 @@ const payWithWallet = async (req, res, next) => {
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (showtimeId) {
+      const showtimeCheck = await Showtime.findById(showtimeId);
+      if (showtimeCheck && isShowtimeExpired(showtimeCheck.date, showtimeCheck.time)) {
+        return res.status(400).json({ success: false, message: 'This showtime has already passed. Booking is closed.' });
+      }
     }
 
     const currentBalance = Number(user.walletBalance || 0);
@@ -217,6 +276,10 @@ const verifyPayment = async (req, res, next) => {
     const user = await User.findById(req.user.id);
     const movie = await Movie.findById(movieId);
     const showtime = showtimeId ? await Showtime.findById(showtimeId).populate('theaterId') : null;
+
+    if (showtime && isShowtimeExpired(showtime.date, showtime.time)) {
+      return res.status(400).json({ success: false, message: 'This showtime has already passed. Booking is closed.' });
+    }
 
     const deductFromWallet = Number(walletAmountToDeduct) || 0;
     let paymentMethod = 'razorpay';

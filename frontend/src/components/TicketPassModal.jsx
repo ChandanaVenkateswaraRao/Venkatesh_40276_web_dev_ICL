@@ -1,8 +1,10 @@
-import { X, Printer, CheckCircle, MapPin, Calendar, Clock, Armchair, CalendarPlus } from 'lucide-react';
+import { X, Printer, CheckCircle, MapPin, Calendar, Clock, Armchair, CalendarPlus, XCircle } from 'lucide-react';
 import { downloadIcsCalendar } from '../utils/calendar';
 
 const TicketPassModal = ({ isOpen, onClose, booking }) => {
   if (!isOpen || !booking) return null;
+
+  const isCancelled = booking.status === 'cancelled';
 
   const handlePrint = () => {
     window.print();
@@ -60,10 +62,17 @@ const TicketPassModal = ({ isOpen, onClose, booking }) => {
               alt="BookMyShow" 
               className="h-8 w-auto" 
             />
-            <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2.5 py-1 rounded-full text-xs font-bold">
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span>BOOKING CONFIRMED</span>
-            </div>
+            {isCancelled ? (
+              <div className="flex items-center gap-1 text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full text-xs font-bold border border-rose-200">
+                <XCircle className="w-3.5 h-3.5" />
+                <span>BOOKING CANCELLED</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2.5 py-1 rounded-full text-xs font-bold">
+                <CheckCircle className="w-3.5 h-3.5" />
+                <span>BOOKING CONFIRMED</span>
+              </div>
+            )}
           </div>
 
           {/* Movie Banner & Info */}

@@ -30,10 +30,10 @@ const getShowtimeById = async (req, res, next) => {
   }
 };
 
-// 3. Get booked seats for a specific showtime
+// 3. Get booked seats for a specific showtime (excluding cancelled bookings)
 const getBookedSeatsForShowtime = async (req, res, next) => {
   try {
-    const bookings = await Booking.find({ showtime: req.params.id });
+    const bookings = await Booking.find({ showtime: req.params.id, status: { $ne: 'cancelled' } });
     let bookedSeats = [];
     bookings.forEach((b) => {
       bookedSeats = [...bookedSeats, ...b.seats];

@@ -4,6 +4,8 @@ const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const Theater = require('../models/Theater');
 const Booking = require('../models/Booking');
+const Showtime = require('../models/Showtime');
+const WalletTransaction = require('../models/WalletTransaction');
 
 // Email transporter config
 const transporter = nodemailer.createTransport({
@@ -310,6 +312,129 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
+// Helper: Parse showtime date and time to Date object
+const parseShowtimeDateTime = (dateInput, timeStr) => {
+  if (!dateInput || !timeStr) return null;
+  let year, month, day;
+  if (dateInput instanceof Date) {
+    year = dateInput.getFullYear();
+    month = dateInput.getMonth();
+    day = dateInput.getDate();
+  } else if (typeof dateInput === 'string') {
+    const datePart = dateInput.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length === 3) {
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      day = parseInt(parts[2], 10);
+    } else {
+      const d = new Date(dateInput);
+      year = d.getFullYear();
+      month = d.getMonth();
+      day = d.getDate();
+    }
+  }
+
+  let hours = 0;
+  let minutes = 0;
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (match) {
+    hours = parseInt(match[1], 10);
+    minutes = parseInt(match[2], 10);
+    const period = match[3] ? match[3].toUpperCase() : null;
+    if (period === 'PM' && hours < 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+  }
+
+  return new Date(year, month, day, hours, minutes, 0, 0);
+};
+
+// 8. Cancel Booking (Permitted only before 2 hours of showtime)
+const cancelBooking = async (req, res, next) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.user.id;
+
+    const booking = await Booking.findOne({ _id: bookingId, user: userId })
+      .populate('movie')
+      .populate({ path: 'showtime', populate: { path: 'theaterId' } });
+
+    if (!booking) {
+      return res.status(404).json({ success: false, msg: 'Booking not found' });
+    }
+
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({ success: false, msg: 'This booking has already been cancelled.' });
+    }
+
+    // Verify 2-hour cancellation rule
+    const showtime = booking.showtime;
+    if (showtime && showtime.date && showtime.time) {
+      const showDateTime = parseShowtimeDateTime(showtime.date, showtime.time);
+      if (showDateTime) {
+        const now = Date.now();
+        const diffMs = showDateTime.getTime() - now;
+        const twoHoursMs = 2 * 60 * 60 * 1000;
+
+        if (diffMs <= twoHoursMs) {
+          return res.status(400).json({
+            success: false,
+            msg: 'Cancellation policy violation: Tickets can only be cancelled at least 2 hours prior to the scheduled showtime.'
+          });
+        }
+      }
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, msg: 'User not found' });
+    }
+
+    const refundAmount = Number(booking.totalAmount) || 0;
+
+    // Mark booking as cancelled
+    booking.status = 'cancelled';
+    booking.cancelledAt = new Date();
+    booking.refundAmount = refundAmount;
+    await booking.save();
+
+    // Credit full refund back to user's BMS wallet
+    const currentBalance = Number(user.walletBalance || 0);
+    user.walletBalance = currentBalance + refundAmount;
+    await user.save();
+
+    // Log credit transaction in wallet history
+    const transaction = new WalletTransaction({
+      user: user._id,
+      type: 'CREDIT',
+      amount: refundAmount,
+      balanceAfter: user.walletBalance,
+      source: 'REFUND',
+      description: `Refund for cancelled booking of "${booking.movie?.title || 'Movie'}" (Seats: ${booking.seats.join(', ')})`,
+      referenceId: booking._id.toString()
+    });
+    await transaction.save();
+
+    // Notify connected clients via WebSocket to release seats immediately
+    const io = req.app.get('io');
+    if (io && showtime) {
+      io.to(`showtime_${showtime._id}`).emit('seats_released', {
+        showtimeId: showtime._id,
+        seats: booking.seats
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      msg: `Booking cancelled successfully! ₹${refundAmount} has been refunded to your BookMyShow Wallet.`,
+      booking,
+      walletBalance: user.walletBalance
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   register,
   verifyOtp,
@@ -317,5 +442,6 @@ module.exports = {
   partnerRegister,
   partnerLogin,
   getProfile,
-  updateProfile
+  updateProfile,
+  cancelBooking
 };

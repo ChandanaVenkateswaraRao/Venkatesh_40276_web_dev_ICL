@@ -18,10 +18,14 @@ import {
   Search,
   ChevronRight,
   Wallet,
-  RefreshCw
+  RefreshCw,
+  XCircle,
+  Clock,
+  RotateCcw
 } from 'lucide-react';
 import TicketPassModal from '../components/TicketPassModal';
 import { useLocationContext } from '../context/LocationContext';
+import { getCancellationEligibility } from '../utils/timeUtils';
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
@@ -39,11 +43,57 @@ const Profile = () => {
   // Booking search/filter
   const [bookingSearch, setBookingSearch] = useState('');
 
+  // Cancellation state
+  const [cancelModalBooking, setCancelModalBooking] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelAlert, setCancelAlert] = useState({ type: '', msg: '' });
+
   // Saved gift cards from localStorage
   const [savedCards, setSavedCards] = useState([]);
 
   const { city, setCity } = useLocationContext();
   const navigate = useNavigate();
+
+  const handleCancelBooking = async (bookingId) => {
+    setCancelling(true);
+    setCancelAlert({ type: '', msg: '' });
+    const token = localStorage.getItem('token');
+
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/auth/bookings/${bookingId}/cancel`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Update local profile state
+      setProfile(prev => {
+        if (!prev) return prev;
+        const updatedBookings = (prev.bookings || []).map(b => 
+          b._id === bookingId ? { ...b, status: 'cancelled', refundAmount: b.totalAmount } : b
+        );
+        const updatedUser = {
+          ...prev.user,
+          walletBalance: res.data.walletBalance !== undefined ? res.data.walletBalance : ((prev.user?.walletBalance || 0) + (cancelModalBooking?.totalAmount || 0))
+        };
+        return { ...prev, bookings: updatedBookings, user: updatedUser };
+      });
+
+      setCancelAlert({
+        type: 'success',
+        msg: res.data.msg || 'Ticket cancelled successfully! Refund has been credited to your BookMyShow Wallet.'
+      });
+      setCancelModalBooking(null);
+      setTimeout(() => setCancelAlert({ type: '', msg: '' }), 6000);
+    } catch (err) {
+      setCancelAlert({
+        type: 'error',
+        msg: err.response?.data?.msg || 'Failed to cancel booking. Please try again.'
+      });
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const fetchProfile = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -293,6 +343,21 @@ const Profile = () => {
         {/* TAB 1: Bookings */}
         {activeTab === 'bookings' && (
           <div>
+            {cancelAlert.msg && (
+              <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 text-xs font-bold shadow-xs animate-fade-in ${
+                cancelAlert.type === 'success' 
+                  ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' 
+                  : 'bg-rose-50 border border-rose-200 text-rose-800'
+              }`}>
+                {cancelAlert.type === 'success' ? (
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                )}
+                <span>{cancelAlert.msg}</span>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <Ticket className="w-5 h-5 text-[#F84464]" /> 
@@ -341,98 +406,148 @@ const Profile = () => {
               </div>
             ) : (
               <div className="flex flex-col gap-6">
-                {filteredBookings.map((booking) => (
-                  <div 
-                    key={booking._id} 
-                    className="bg-white rounded-3xl shadow-xs border border-gray-200 overflow-hidden flex flex-col md:flex-row hover:shadow-md transition-shadow"
-                  >
-                    {/* Movie Poster */}
-                    <div className="w-full md:w-48 h-52 md:h-auto bg-gray-100 flex-shrink-0 relative overflow-hidden">
-                      <img 
-                        src={booking.movie?.image || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&q=80&w=600'} 
-                        alt={booking.movie?.title || 'Movie'} 
-                        className="w-full h-full object-cover" 
-                      />
-                      <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
-                        {booking.seats?.length} {booking.seats?.length === 1 ? 'Ticket' : 'Tickets'}
-                      </div>
-                    </div>
+                {filteredBookings.map((booking) => {
+                  const isCancelled = booking.status === 'cancelled';
+                  const eligibility = getCancellationEligibility(booking.showtime?.date, booking.showtime?.time);
 
-                    {/* Booking Details */}
-                    <div className="p-6 flex-1 flex flex-col justify-between">
-                      <div>
-                        <div className="flex justify-between items-start gap-4 mb-2">
-                          <div>
-                            <h3 className="text-xl font-black text-gray-900 leading-tight">
-                              {booking.movie?.title || 'Confirmed Movie Experience'}
-                            </h3>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {booking.movie?.language || 'Hindi / English'} • 2D • Audi 02
-                            </p>
+                  return (
+                    <div 
+                      key={booking._id} 
+                      className={`bg-white rounded-3xl shadow-xs border overflow-hidden flex flex-col md:flex-row hover:shadow-md transition-shadow ${
+                        isCancelled ? 'border-rose-200/80 opacity-90' : 'border-gray-200'
+                      }`}
+                    >
+                      {/* Movie Poster */}
+                      <div className="w-full md:w-48 h-52 md:h-auto bg-gray-100 flex-shrink-0 relative overflow-hidden">
+                        <img 
+                          src={booking.movie?.image || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&q=80&w=600'} 
+                          alt={booking.movie?.title || 'Movie'} 
+                          className="w-full h-full object-cover" 
+                        />
+                        <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+                          {booking.seats?.length} {booking.seats?.length === 1 ? 'Ticket' : 'Tickets'}
+                        </div>
+                      </div>
+
+                      {/* Booking Details */}
+                      <div className="p-6 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start gap-4 mb-2">
+                            <div>
+                              <h3 className="text-xl font-black text-gray-900 leading-tight">
+                                {booking.movie?.title || 'Confirmed Movie Experience'}
+                              </h3>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {booking.movie?.language || 'Hindi / English'} • 2D • {booking.showtime?.screen || 'Audi 01'}
+                              </p>
+                            </div>
+
+                            {!isCancelled && (
+                              <button
+                                onClick={() => setSelectedPassBooking(booking)}
+                                className="flex items-center gap-1.5 text-xs font-bold text-[#F84464] bg-pink-50 hover:bg-pink-100 border border-pink-200 px-3.5 py-2 rounded-xl transition-colors cursor-pointer flex-shrink-0"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                                <span>Official E-Ticket</span>
+                              </button>
+                            )}
                           </div>
 
+                          <p className="text-gray-400 text-[11px] mb-4">
+                            Booked on: {new Date(booking.createdAt).toLocaleString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4 bg-gray-50 p-3.5 rounded-2xl border border-gray-100 text-xs">
+                            <div>
+                              <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Seat Numbers</span>
+                              <span className="font-bold text-gray-900 flex items-center gap-1 mt-0.5">
+                                <Armchair className="w-3.5 h-3.5 text-[#F84464]" />
+                                {booking.seats?.join(', ')}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Total Amount</span>
+                              <span className={`font-extrabold mt-0.5 block ${isCancelled ? 'line-through text-gray-400' : 'text-green-600'}`}>
+                                ₹{booking.totalAmount}
+                              </span>
+                            </div>
+
+                            <div className="col-span-2 sm:col-span-1">
+                              <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Status</span>
+                              {isCancelled ? (
+                                <span className="font-bold text-rose-700 flex items-center gap-1 mt-0.5">
+                                  <XCircle className="w-3.5 h-3.5 text-rose-600" /> Cancelled & Refunded
+                                </span>
+                              ) : (
+                                <span className="font-bold text-green-700 flex items-center gap-1 mt-0.5">
+                                  <CheckCircle className="w-3.5 h-3.5 text-green-600" /> Confirmed
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 text-[11px] text-gray-500">
+                            <span>Booking ID: <strong className="font-mono text-gray-700">{booking._id}</strong></span>
+
+                            {isCancelled ? (
+                              <span className="text-rose-600 font-bold bg-rose-50 px-3 py-1 rounded-lg border border-rose-200">
+                                Refund of ₹{booking.refundAmount || booking.totalAmount} Credited to Wallet
+                              </span>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                {eligibility.isEligible ? (
+                                  <button
+                                    onClick={() => setCancelModalBooking(booking)}
+                                    className="text-xs font-bold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                                    title="Cancel ticket up to 2 hours before showtime"
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                    <span>Cancel Booking</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] text-gray-400 font-medium bg-gray-100 px-2.5 py-1 rounded-md" title={eligibility.reason}>
+                                    Cancellation closed ({eligibility.reason})
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* QR Code Validation Stub */}
+                      {isCancelled ? (
+                        <div className="p-6 bg-rose-50/40 border-t md:border-t-0 md:border-l border-gray-100 flex flex-col items-center justify-center min-w-[190px]">
+                          <div className="w-24 h-24 border-2 border-dashed border-rose-300 rounded-xl bg-white flex flex-col items-center justify-center text-rose-500 mb-2">
+                            <XCircle className="w-8 h-8 text-rose-500 mb-1" />
+                            <span className="text-[10px] font-black uppercase tracking-wider text-rose-600">VOID</span>
+                          </div>
+                          <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest text-center">
+                            Ticket Cancelled
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="p-6 bg-gray-50/80 border-t md:border-t-0 md:border-l border-gray-100 flex flex-col items-center justify-center min-w-[190px]">
+                          <img 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=TICKET:${booking._id}`} 
+                            alt="QR Code" 
+                            className="w-24 h-24 border-2 border-white shadow-xs rounded-xl bg-white mb-2" 
+                          />
+                          <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest text-center">
+                            Gate QR Code
+                          </p>
                           <button
                             onClick={() => setSelectedPassBooking(booking)}
-                            className="flex items-center gap-1.5 text-xs font-bold text-[#F84464] bg-pink-50 hover:bg-pink-100 border border-pink-200 px-3.5 py-2 rounded-xl transition-colors cursor-pointer flex-shrink-0"
+                            className="text-xs text-[#F84464] hover:underline mt-2 font-bold cursor-pointer"
                           >
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>Official E-Ticket</span>
+                            Open Full Ticket &rarr;
                           </button>
                         </div>
-
-                        <p className="text-gray-400 text-[11px] mb-4">
-                          Booked on: {new Date(booking.createdAt).toLocaleString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </p>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4 bg-gray-50 p-3.5 rounded-2xl border border-gray-100 text-xs">
-                          <div>
-                            <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Seat Numbers</span>
-                            <span className="font-bold text-gray-900 flex items-center gap-1 mt-0.5">
-                              <Armchair className="w-3.5 h-3.5 text-[#F84464]" />
-                              {booking.seats?.join(', ')}
-                            </span>
-                          </div>
-
-                          <div>
-                            <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Total Amount</span>
-                            <span className="font-extrabold text-green-600 mt-0.5 block">
-                              ₹{booking.totalAmount}
-                            </span>
-                          </div>
-
-                          <div className="col-span-2 sm:col-span-1">
-                            <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Status</span>
-                            <span className="font-bold text-green-700 flex items-center gap-1 mt-0.5">
-                              <CheckCircle className="w-3.5 h-3.5 text-green-600" /> Confirmed
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between text-[11px] text-gray-400">
-                          <span>Booking ID: <strong className="font-mono text-gray-700">{booking._id}</strong></span>
-                        </div>
-                      </div>
+                      )}
                     </div>
-
-                    {/* QR Code Validation Stub */}
-                    <div className="p-6 bg-gray-50/80 border-t md:border-t-0 md:border-l border-gray-100 flex flex-col items-center justify-center min-w-[190px]">
-                      <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=TICKET:${booking._id}`} 
-                        alt="QR Code" 
-                        className="w-24 h-24 border-2 border-white shadow-xs rounded-xl bg-white mb-2" 
-                      />
-                      <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest text-center">
-                        Gate QR Code
-                      </p>
-                      <button
-                        onClick={() => setSelectedPassBooking(booking)}
-                        className="text-xs text-[#F84464] hover:underline mt-2 font-bold cursor-pointer"
-                      >
-                        Open Full Ticket &rarr;
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -627,6 +742,75 @@ const Profile = () => {
         onClose={() => setSelectedPassBooking(null)}
         booking={selectedPassBooking}
       />
+
+      {/* Cancellation Confirmation Modal */}
+      {cancelModalBooking && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 sm:p-7 shadow-2xl relative border border-slate-100">
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+              <RotateCcw className="w-6 h-6" />
+            </div>
+            
+            <h3 className="text-lg font-bold text-slate-900 text-center mb-1">
+              Cancel Movie Ticket?
+            </h3>
+            <p className="text-xs text-slate-500 text-center mb-5">
+              Are you sure you want to cancel your booking for <strong>{cancelModalBooking.movie?.title}</strong>?
+            </p>
+
+            {/* Ticket Details Box */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs space-y-2 mb-4">
+              <div className="flex justify-between text-slate-600">
+                <span>Cinema:</span>
+                <strong className="text-slate-900">{cancelModalBooking.showtime?.theaterId?.name || 'Multiplex'}</strong>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Showtime:</span>
+                <strong className="text-slate-900">{cancelModalBooking.showtime?.time || 'Show'}</strong>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Seats:</span>
+                <strong className="text-slate-900 font-mono">{cancelModalBooking.seats?.join(', ')}</strong>
+              </div>
+              <div className="flex justify-between text-slate-600 border-t border-slate-200 pt-2 font-bold">
+                <span>Refundable Amount:</span>
+                <strong className="text-emerald-700 text-sm">₹{cancelModalBooking.totalAmount}</strong>
+              </div>
+            </div>
+
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl mb-5 text-[11px] text-emerald-800 font-semibold flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>₹{cancelModalBooking.totalAmount} will be refunded directly to your BMS Wallet.</span>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={cancelling}
+                onClick={() => setCancelModalBooking(null)}
+                className="flex-1 py-2.5 px-4 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Keep Ticket
+              </button>
+              <button
+                type="button"
+                disabled={cancelling}
+                onClick={() => handleCancelBooking(cancelModalBooking._id)}
+                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {cancelling ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Cancelling...</span>
+                  </>
+                ) : (
+                  <span>Confirm Cancellation</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

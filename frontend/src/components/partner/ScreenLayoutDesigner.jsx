@@ -710,49 +710,53 @@ const ScreenLayoutDesigner = ({ theater, onLayoutSaved }) => {
                     </button>
                   </div>
 
-                  {/* Seat Cells */}
+                  {/* Seat Cells (with Continuous Seat Numbering for active seats) */}
                   <div className="flex gap-1.5">
-                    {colNumbers.map((col) => {
-                      const seatId = `${row}${col}`;
-                      const isDeleted = deletedSeats.has(seatId);
+                    {(() => {
+                      let activeRowSeatCounter = 0;
+                      return colNumbers.map((col) => {
+                        const gridKey = `${row}${col}`;
+                        const isDeleted = deletedSeats.has(gridKey);
+                        const continuousSeatNum = isDeleted ? null : ++activeRowSeatCounter;
 
-                      if (isDeleted) {
+                        if (isDeleted) {
+                          return (
+                            <button
+                              key={gridKey}
+                              type="button"
+                              onClick={() => handleToggleSeat(gridKey)}
+                              className={`border border-dashed border-slate-700/60 bg-transparent hover:bg-slate-800/80 hover:border-slate-500 rounded flex items-center justify-center cursor-pointer transition-colors group ${
+                                tier === 'recliner' ? 'w-9 sm:w-10 h-7 sm:h-8' : 'w-7 sm:w-8 h-7 sm:h-8'
+                              }`}
+                              title={`Aisle Space (Col ${col}) - Click to restore seat`}
+                            >
+                              <span className="text-[10px] text-slate-600 group-hover:text-slate-300 font-mono">
+                                &middot;
+                              </span>
+                            </button>
+                          );
+                        }
+
                         return (
                           <button
-                            key={seatId}
+                            key={gridKey}
                             type="button"
-                            onClick={() => handleToggleSeat(seatId)}
-                            className={`border border-dashed border-slate-700/60 bg-transparent hover:bg-slate-800/80 hover:border-slate-500 rounded flex items-center justify-center cursor-pointer transition-colors group ${
+                            onClick={() => handleToggleSeat(gridKey)}
+                            className={`rounded border text-[11px] font-mono font-medium transition-all relative flex items-center justify-center cursor-pointer group active:scale-95 ${meta.seatBg} ${
                               tier === 'recliner' ? 'w-9 sm:w-10 h-7 sm:h-8' : 'w-7 sm:w-8 h-7 sm:h-8'
                             }`}
-                            title={`Aisle Space (${seatId}) - Click to restore`}
+                            title={`Seat ${row}${continuousSeatNum} (Col ${col}, ${meta.label}) - Click to delete`}
                           >
-                            <span className="text-[10px] text-slate-600 group-hover:text-slate-300 font-mono">
-                              &middot;
+                            <span className="group-hover:hidden">
+                              {continuousSeatNum}
+                            </span>
+                            <span className="hidden group-hover:block text-rose-400 font-bold text-xs">
+                              &times;
                             </span>
                           </button>
                         );
-                      }
-
-                      return (
-                        <button
-                          key={seatId}
-                          type="button"
-                          onClick={() => handleToggleSeat(seatId)}
-                          className={`rounded border text-[11px] font-mono font-medium transition-all relative flex items-center justify-center cursor-pointer group active:scale-95 ${meta.seatBg} ${
-                            tier === 'recliner' ? 'w-9 sm:w-10 h-7 sm:h-8' : 'w-7 sm:w-8 h-7 sm:h-8'
-                          }`}
-                          title={`Seat ${seatId} (${meta.label}) - Click to delete`}
-                        >
-                          <span className="group-hover:hidden">
-                            {col}
-                          </span>
-                          <span className="hidden group-hover:block text-rose-400 font-bold text-xs">
-                            &times;
-                          </span>
-                        </button>
-                      );
-                    })}
+                      });
+                    })()}
                   </div>
 
                   {/* Right Control: Row Letter */}

@@ -5,6 +5,7 @@ import { ChevronDown, Info, Heart, Search, X, Utensils, Smartphone, Moon, Sun, A
 import { useLocationContext } from '../context/LocationContext';
 import SeatQuantityModal from '../components/SeatQuantityModal';
 import { API_BASE_URL } from '../api/config';
+import { isShowtimeExpired } from '../utils/timeUtils';
 
 const Theaters = () => {
   const { id } = useParams(); // movieId
@@ -506,8 +507,38 @@ const Theaters = () => {
                   {/* Right Column: Showtimes Pills */}
                   <div className="lg:w-[68%] flex flex-wrap gap-3 items-center content-start">
                     {group.showtimes.map((st) => {
+                      const isExpired = isShowtimeExpired(st.date, st.time);
                       const isFastFilling = st.status === 'FAST_FILLING';
                       
+                      if (isExpired) {
+                        return (
+                          <div key={st._id} className="relative group">
+                            <button
+                              type="button"
+                              disabled
+                              className="flex flex-col items-center justify-center min-w-[92px] sm:min-w-[104px] py-1.5 px-3 rounded-lg border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60 text-center select-none"
+                              title="Show has ended • Booking closed"
+                            >
+                              <span className="font-bold text-xs sm:text-[13px] tracking-tight line-through text-slate-400">
+                                {st.time}
+                              </span>
+                              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wide mt-0.5 truncate max-w-[90px]">
+                                Closed
+                              </span>
+                            </button>
+
+                            {/* Tooltip on hover explaining closed show */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none">
+                              <div className="bg-[#1F2533] text-white text-[11px] rounded-lg py-1.5 px-2.5 shadow-xl whitespace-nowrap text-center">
+                                <p className="font-bold text-rose-300 text-[10px] uppercase tracking-wider">Showtime Passed</p>
+                                <p className="text-[10px] text-gray-300">Online booking is closed</p>
+                              </div>
+                              <div className="w-2 h-2 bg-[#1F2533] rotate-45 -mt-1"></div>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div key={st._id} className="relative group">
                           <button
