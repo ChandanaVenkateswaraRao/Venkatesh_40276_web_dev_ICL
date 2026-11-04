@@ -98,3 +98,4 @@ export const getCancellationEligibility = (dateInput, timeStr) => {
     reason: `Cancellable until 2 hours before show`
   };
 };
+
