@@ -1463,7 +1463,7 @@ const PartnerDashboard = ({ defaultTab }) => {
                 <input
                   type="number"
                   required
-                  min="50"
+                  min="1"
                   max="2000"
                   value={priceForm.priceExecutive}
                   onChange={(e) => setPriceForm({ ...priceForm, priceExecutive: e.target.value })}
@@ -1478,7 +1478,7 @@ const PartnerDashboard = ({ defaultTab }) => {
                 <input
                   type="number"
                   required
-                  min="50"
+                  min="1"
                   max="3000"
                   value={priceForm.pricePremium}
                   onChange={(e) => setPriceForm({ ...priceForm, pricePremium: e.target.value })}
@@ -1850,7 +1850,7 @@ const PartnerDashboard = ({ defaultTab }) => {
                   <input
                     type="number"
                     required
-                    min="50"
+                    min="1"
                     max="2000"
                     value={showForm.priceExecutive}
                     onChange={(e) => setShowForm({ ...showForm, priceExecutive: e.target.value })}
@@ -1865,7 +1865,7 @@ const PartnerDashboard = ({ defaultTab }) => {
                   <input
                     type="number"
                     required
-                    min="50"
+                    min="1"
                     max="3000"
                     value={showForm.pricePremium}
                     onChange={(e) => setShowForm({ ...showForm, pricePremium: e.target.value })}

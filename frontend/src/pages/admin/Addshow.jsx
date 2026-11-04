@@ -497,7 +497,7 @@ const Addshow = () => {
                       <label className="block text-[11px] font-bold text-gray-700 mb-1">Executive (₹)</label>
                       <input
                         type="number"
-                        min="50"
+                        min="1"
                         value={movieForm.initialPriceExecutive}
                         onChange={(e) => setMovieForm({ ...movieForm, initialPriceExecutive: e.target.value })}
                         className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#F84464]"
@@ -507,7 +507,7 @@ const Addshow = () => {
                       <label className="block text-[11px] font-bold text-gray-700 mb-1">Premium (₹)</label>
                       <input
                         type="number"
-                        min="50"
+                        min="1"
                         value={movieForm.initialPricePremium}
                         onChange={(e) => setMovieForm({ ...movieForm, initialPricePremium: e.target.value })}
                         className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#F84464]"
@@ -662,7 +662,7 @@ const Addshow = () => {
                 <input
                   type="number"
                   required
-                  min="50"
+                  min="1"
                   value={scheduleForm.priceExecutive}
                   onChange={(e) => setScheduleForm({ ...scheduleForm, priceExecutive: e.target.value })}
                   className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-600"
@@ -674,7 +674,7 @@ const Addshow = () => {
                 <input
                   type="number"
                   required
-                  min="50"
+                  min="1"
                   value={scheduleForm.pricePremium}
                   onChange={(e) => setScheduleForm({ ...scheduleForm, pricePremium: e.target.value })}
                   className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-600"

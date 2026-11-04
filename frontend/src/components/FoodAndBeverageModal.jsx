@@ -98,8 +98,8 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, walletBalance = 0,
     return sum + (item ? item.price * qty : 0);
   }, 0);
 
-  const convenienceFee = 30;
-  const gst = 5.4; // 18% GST on convenience fee
+  const convenienceFee = 0; // Testing: zero convenience fee
+  const gst = 0; // Testing: zero tax price
   const donation = donateBookASmile ? 1 : 0;
   const grandTotal = Math.round(ticketTotal + fnbTotal + convenienceFee + gst + donation);
 
@@ -237,12 +237,12 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, walletBalance = 0,
 
                 <div className="flex justify-between">
                   <span>Convenience Fee</span>
-                  <span className="font-semibold text-gray-800">₹{convenienceFee}</span>
+                  <span className="font-semibold text-gray-800">₹0</span>
                 </div>
 
                 <div className="flex justify-between">
-                  <span>Integrated GST (18%)</span>
-                  <span className="font-semibold text-gray-800">₹{gst}</span>
+                  <span>Integrated GST (0%)</span>
+                  <span className="font-semibold text-gray-800">₹0</span>
                 </div>
 
                 {/* BookASmile Donation */}
