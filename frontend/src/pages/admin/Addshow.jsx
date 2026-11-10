@@ -23,7 +23,7 @@ const Addshow = () => {
     genre: 'Action/Thriller',
     language: 'Telugu',
     rating: '8.5',
-    trailerUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    trailerUrl: 'https://www.youtube.com/watch?v=xenOE1Tma0A',
     cities: ['Hyderabad', 'Bengaluru', 'Mumbai'],
     // Option to schedule initial showtime immediately
     scheduleInitialShow: false,

@@ -1,8 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Star, Share2, ChevronRight, X, Play } from 'lucide-react';
+import { Star, Share2, ChevronRight, X, Play, ExternalLink } from 'lucide-react';
 import { API_BASE_URL } from '../api/config';
+
+// Helper to format any YouTube URL into an embeddable YouTube No-Cookie URL
+const getYouTubeEmbedUrl = (url) => {
+  if (!url) return '';
+  const trimmed = url.trim();
+  const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = trimmed.match(regExp);
+  if (match && match[2] && match[2].length === 11) {
+    return `https://www.youtube-nocookie.com/embed/${match[2]}?autoplay=1&enablejsapi=1&rel=0`;
+  }
+  const separator = trimmed.includes('?') ? '&' : '?';
+  return `${trimmed}${separator}autoplay=1`;
+};
+
+// Helper to provide direct watch URL for fallback
+const getYouTubeWatchUrl = (url) => {
+  if (!url) return 'https://www.youtube.com';
+  const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.trim().match(regExp);
+  if (match && match[2] && match[2].length === 11) {
+    return `https://www.youtube.com/watch?v=${match[2]}`;
+  }
+  return url;
+};
 
 const Movie = () => {
   const { id } = useParams();
@@ -251,20 +275,38 @@ const Movie = () => {
         <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-md animate-fade-in">
           <div className="relative w-full max-w-4xl bg-black rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
             <div className="flex justify-between items-center px-4 py-3 bg-[#1A1A1A] border-b border-gray-800">
-              <h3 className="font-bold text-white text-base truncate">{movie.title} - Official Trailer</h3>
-              <button 
-                onClick={() => setIsTrailerOpen(false)} 
-                className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-800 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-2 min-w-0 pr-4">
+                <div className="w-6 h-6 rounded-md bg-[#F84464] flex items-center justify-center text-white shrink-0">
+                  <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                </div>
+                <h3 className="font-bold text-white text-base truncate">{movie.title} - Official Trailer</h3>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <a
+                  href={getYouTubeWatchUrl(movie.trailerUrl)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-gray-200 hover:text-white rounded-lg text-xs font-semibold transition-all border border-white/10"
+                >
+                  <span>Open in YouTube</span>
+                  <ExternalLink className="w-3 h-3 text-red-500" />
+                </a>
+                <button 
+                  onClick={() => setIsTrailerOpen(false)} 
+                  className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-800 transition-colors cursor-pointer"
+                  title="Close Trailer"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
-            <div className="aspect-video w-full bg-black">
+            <div className="aspect-video w-full bg-black relative">
               <iframe
-                src={`${movie.trailerUrl}?autoplay=1`}
+                src={getYouTubeEmbedUrl(movie.trailerUrl)}
                 title={`${movie.title} Trailer`}
                 className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
               ></iframe>
             </div>
