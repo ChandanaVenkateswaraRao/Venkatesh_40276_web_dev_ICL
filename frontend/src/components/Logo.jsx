@@ -36,3 +36,4 @@ const Logo = ({ variant = 'light', className = '', size = 'md' }) => {
 };
 
 export default Logo;
+
