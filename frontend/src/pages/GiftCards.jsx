@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { API_BASE_URL } from '../api/config';
+import { API_BASE_URL, RAZORPAY_KEY_ID } from '../api/config';
 import { 
   Gift, 
   CreditCard, 
@@ -228,7 +228,7 @@ const GiftCards = () => {
       const order = orderRes.data.data;
 
       // 3. Initiate Razorpay Modal
-      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_SZW126jzeHpLC8';
+      const razorpayKey = RAZORPAY_KEY_ID || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
       const options = {
         key: razorpayKey,
         amount: order.amount,

@@ -5,7 +5,7 @@ import { ChevronLeft, Clock, Users, ShieldAlert, Sparkles, Armchair, CheckCircle
 import FoodAndBeverageModal from '../components/FoodAndBeverageModal';
 import TicketPassModal from '../components/TicketPassModal';
 import getSocket from '../utils/socket';
-import { API_BASE_URL } from '../api/config';
+import { API_BASE_URL, RAZORPAY_KEY_ID } from '../api/config';
 import { isShowtimeExpired } from '../utils/timeUtils';
 
 const Booking = () => {
@@ -348,7 +348,7 @@ const Booking = () => {
         console.warn('Profile prefill fallback', e);
       }
 
-      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_SZW126jzeHpLC8';
+      const razorpayKey = RAZORPAY_KEY_ID || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
       const options = {
         key: razorpayKey,
         amount: order.amount,

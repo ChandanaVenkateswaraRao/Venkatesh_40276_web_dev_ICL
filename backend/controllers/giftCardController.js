@@ -24,8 +24,8 @@ const createGiftCardOrder = async (req, res, next) => {
     const totalAmount = Number(amount) * Number(quantity);
 
     const instance = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_live_SZW126jzeHpLC8',
-      key_secret: process.env.RAZORPAY_KEY_SECRET || 'YOUR_TEST_KEY_SECRET',
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
     const options = {
@@ -64,7 +64,7 @@ const verifyGiftCardPurchase = async (req, res, next) => {
 
     const sign = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSign = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'YOUR_TEST_KEY_SECRET')
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '')
       .update(sign.toString())
       .digest('hex');
 
