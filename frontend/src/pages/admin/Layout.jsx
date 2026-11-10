@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import { 
@@ -38,13 +39,17 @@ const Layout = () => {
       case '/admin':
       default:
         return {
-          title: 'Operations Overview',
+          title: 'BookMyTicket Admin Dashboard',
           subtitle: 'Central real-time monitoring of box office revenue, admissions, and catalog'
         };
     }
   };
 
   const headerInfo = getHeaderInfo();
+
+  useEffect(() => {
+    document.title = `${headerInfo.title} | BookMyTicket`;
+  }, [headerInfo.title]);
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
@@ -101,7 +106,7 @@ const Layout = () => {
             </div>
             <div className="text-left hidden md:block">
               <span className="text-xs font-bold text-gray-900 block leading-tight">Administrator</span>
-              <span className="text-[10px] text-gray-400 block leading-none">Central Ops</span>
+              <span className="text-[10px] text-gray-400 block leading-none">BookMyTicket Central</span>
             </div>
           </div>
 

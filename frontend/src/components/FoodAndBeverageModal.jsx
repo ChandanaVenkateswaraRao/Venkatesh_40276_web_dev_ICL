@@ -331,7 +331,7 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, walletBalance = 0,
                 <ShieldCheck className="w-4 h-4 flex-shrink-0 text-green-600" />
                 <span>
                   {useWallet && walletDeductAmount >= grandTotal 
-                    ? '100% Instant Booking via BMS Wallet' 
+                    ? '100% Instant Booking via BMT Wallet' 
                     : '100% Secure Checkout via Razorpay'}
                 </span>
               </div>

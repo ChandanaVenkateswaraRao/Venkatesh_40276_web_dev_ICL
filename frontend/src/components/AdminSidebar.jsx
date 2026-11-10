@@ -55,14 +55,14 @@ const AdminSidebar = () => {
         <div className="h-16 px-6 border-b border-gray-800/80 flex items-center justify-between">
           <Link to="/admin" className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-[#F84464] text-white font-black text-xs flex items-center justify-center tracking-tight shadow-sm">
-              BMS
+              BMT
             </div>
             <div>
               <span className="font-extrabold text-base tracking-tight text-white block leading-none">
-                book<span className="text-[#F84464]">my</span>show
+                book<span className="text-[#F84464]">my</span>ticket
               </span>
               <span className="text-[9px] uppercase tracking-[0.2em] text-gray-400 font-semibold block mt-0.5">
-                Central Operations
+                Admin Console
               </span>
             </div>
           </Link>

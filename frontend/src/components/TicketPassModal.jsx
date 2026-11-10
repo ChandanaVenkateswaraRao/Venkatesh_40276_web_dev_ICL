@@ -139,7 +139,7 @@ const TicketPassModal = ({ isOpen, onClose, booking }) => {
               <span>
                 Payment: {booking.paymentMethod === 'wallet' ? (
                   <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                    💳 BMS Wallet (100%)
+                    💳 BMT Wallet (100%)
                   </span>
                 ) : booking.paymentMethod === 'split' ? (
                   <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
