@@ -421,11 +421,11 @@ const Corporates = () => {
               Enterprise Hotline: +91 80 4455 6677
             </a>
             <a 
-              href="mailto:corporates@bookmyshow.icl" 
+              href="mailto:corporates@bookmyticket.icl" 
               className="hover:text-white flex items-center gap-1 text-gray-300 transition-colors hidden sm:flex"
             >
               <Mail className="w-3.5 h-3.5 text-blue-400" />
-              corporates@bookmyshow.icl
+              corporates@bookmyticket.icl
             </a>
           </div>
         </div>

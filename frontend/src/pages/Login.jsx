@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { API_BASE_URL } from '../api/config';
+import Logo from '../components/Logo';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -46,11 +47,7 @@ const Login = () => {
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#1EA83C] rounded-full mix-blend-multiply filter blur-3xl opacity-20 -ml-20 -mb-20"></div>
           
           <div className="relative z-10">
-            <img 
-              src="https://in.bmscdn.com/webin/common/icons/logo.svg" 
-              alt="bookmyshow logo" 
-              className="w-48 mb-2"
-            />
+            <Logo size="lg" className="mb-3" />
             <p className="text-gray-400">Your ticket to the best entertainment.</p>
           </div>
           

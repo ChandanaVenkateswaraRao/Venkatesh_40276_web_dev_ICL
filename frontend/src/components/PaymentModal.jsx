@@ -42,10 +42,10 @@ const PaymentModal = ({ isOpen, onClose, totalAmount, movieTitle, onConfirmPayme
         <div className="bg-[#1F2533] px-6 py-4 flex items-center justify-between text-white">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-[#F84464] flex items-center justify-center font-black text-sm italic">
-              BMS
+              BMT
             </div>
             <div>
-              <h3 className="text-sm font-bold tracking-tight">bookmyshow Secure Checkout</h3>
+              <h3 className="text-sm font-bold tracking-tight">bookmyticket Secure Checkout</h3>
               <p className="text-[11px] text-gray-400">100% Secure 256-bit Encrypted Payment</p>
             </div>
           </div>
@@ -116,7 +116,7 @@ const PaymentModal = ({ isOpen, onClose, totalAmount, movieTitle, onConfirmPayme
               </p>
 
               <div className="w-full mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 bg-gray-50 p-2.5 rounded-xl">
-                <span>VPA: <strong className="font-mono text-gray-700">bookmyshow@razorpay</strong></span>
+                <span>VPA: <strong className="font-mono text-gray-700">bookmyticket@razorpay</strong></span>
                 <span className="text-emerald-600 font-bold flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5" /> Verified
                 </span>

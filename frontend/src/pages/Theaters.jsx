@@ -618,7 +618,7 @@ const Theaters = () => {
         </div>
       )}
 
-      {/* 6. BOOKMYSHOW SEAT QUANTITY MODAL */}
+      {/* 6. BOOKMYTICKET SEAT QUANTITY MODAL */}
       <SeatQuantityModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 

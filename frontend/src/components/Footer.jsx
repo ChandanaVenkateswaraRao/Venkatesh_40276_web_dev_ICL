@@ -1,5 +1,6 @@
 import { MonitorPlay } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
+import Logo from './Logo';
 
 const Footer = () => {
   const location = useLocation();
@@ -52,12 +53,8 @@ const Footer = () => {
 
         <div className="w-full flex items-center justify-between border-t border-[#444444] pt-8">
           <div className="h-[1px] bg-[#444444] flex-1"></div>
-          <div className="px-4">
-             <img 
-               src="https://in.bmscdn.com/webin/common/icons/logo.svg" 
-               alt="bookmyshow logo" 
-               className="w-[115px] h-auto filter grayscale opacity-70"
-             />
+          <div className="px-4 opacity-75">
+             <Logo variant="monochrome" size="md" />
           </div>
           <div className="h-[1px] bg-[#444444] flex-1"></div>
         </div>

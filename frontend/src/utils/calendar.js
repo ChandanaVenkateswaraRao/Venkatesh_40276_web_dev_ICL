@@ -10,11 +10,11 @@ export const downloadIcsCalendar = ({ title, theater, time, seats, bookingId }) 
     const icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//bookmyshow//Movie Booking//EN',
+      'PRODID:-//bookmyticket//Movie Booking//EN',
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
       'BEGIN:VEVENT',
-      `UID:booking-${bookingId || Date.now()}@bookmyshow.com`,
+      `UID:booking-${bookingId || Date.now()}@bookmyticket.com`,
       `DTSTAMP:${dtStamp}`,
       `SUMMARY:🎬 Movie: ${cleanTitle}`,
       `DESCRIPTION:Your booking for ${cleanTitle} at ${cleanTheater}. Seats: ${seats?.join(', ') || 'N/A'}. Booking ID: ${bookingId}.`,

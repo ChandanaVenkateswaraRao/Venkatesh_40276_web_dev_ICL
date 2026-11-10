@@ -788,7 +788,7 @@ const AdminTheaters = () => {
                   Register New Cinema Theater
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Onboard theater onto bookmyshow, configure auditorium screens, and create its partner login credentials.
+                  Onboard theater onto bookmyticket, configure auditorium screens, and create its partner login credentials.
                 </p>
               </div>
               <button 

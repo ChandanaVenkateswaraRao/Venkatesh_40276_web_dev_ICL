@@ -47,13 +47,13 @@ const sendTicketConfirmationEmail = async (booking, movie, showtime, user, seats
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=TICKET:${booking._id}`;
 
   const mailOptions = {
-    from: `"bookmyshow" <${process.env.SMTP_USER}>`,
+    from: `"bookmyticket" <${process.env.SMTP_USER}>`,
     to: user?.email,
     subject: `Your Tickets for ${movie ? movie.title : 'Movie'} are Confirmed!`,
     html: `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 0; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #eeeeee;">
         <div style="background-color: #F84464; padding: 20px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; font-style: italic;">bookmyshow</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; font-style: italic;">bookmyticket</h1>
           <p style="color: #ffd1d8; margin: 5px 0 0 0; font-size: 14px;">Booking Confirmed</p>
         </div>
         <div style="padding: 30px;">
@@ -74,7 +74,7 @@ const sendTicketConfirmationEmail = async (booking, movie, showtime, user, seats
           </div>
         </div>
         <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 12px; color: #999999;">
-          <p style="margin: 0;">© 2026 bookmyshow. All rights reserved.</p>
+          <p style="margin: 0;">© 2026 bookmyticket. All rights reserved.</p>
         </div>
       </div>
     `,
@@ -165,7 +165,7 @@ const createOrder = async (req, res, next) => {
   }
 };
 
-// 2. Pay 100% using BookMyShow Wallet Balance
+// 2. Pay 100% using BookMyTicket Wallet Balance
 const payWithWallet = async (req, res, next) => {
   try {
     const { movieId, showtimeId, seats, amount } = req.body;
@@ -232,7 +232,7 @@ const payWithWallet = async (req, res, next) => {
     await broadcastBookingEvents(req, booking, movie, showtime, user, seats, requiredAmount);
 
     // Send confirmation email
-    await sendTicketConfirmationEmail(booking, movie, showtime, user, seats, requiredAmount, 'BookMyShow Wallet (100% Paid)');
+    await sendTicketConfirmationEmail(booking, movie, showtime, user, seats, requiredAmount, 'BookMyTicket Wallet (100% Paid)');
 
     const populatedBooking = await Booking.findById(booking._id)
       .populate('movie')

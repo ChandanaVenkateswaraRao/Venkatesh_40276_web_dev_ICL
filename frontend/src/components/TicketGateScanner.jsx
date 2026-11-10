@@ -695,7 +695,7 @@ const TicketGateScanner = ({ userRole = 'partner', currentTheater = null }) => {
                 <div className="p-4 bg-gray-50 rounded-xl text-[11px] text-gray-500 text-left space-y-1">
                   <p className="font-semibold text-gray-700">Potential Reasons:</p>
                   <ul className="list-disc pl-4 space-y-0.5 text-[10px]">
-                    <li>QR code was not issued by BookMyShow platform.</li>
+                    <li>QR code was not issued by BookMyTicket platform.</li>
                     <li>Payment was not finalized or was refunded.</li>
                     <li>Screen brightness is low; try entering Booking ID manually.</li>
                   </ul>

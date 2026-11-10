@@ -106,7 +106,7 @@ const CorporateBookingSchema = new mongoose.Schema({
     name: { type: String, default: 'Vikramaditya Sen' },
     role: { type: String, default: 'National Head - Corporate Client Experience' },
     phone: { type: String, default: '+91 91234 56789' },
-    email: { type: String, default: 'corporates@bookmyshow.icl' },
+    email: { type: String, default: 'corporates@bookmyticket.icl' },
     whatsapp: { type: String, default: '+919123456789' },
     avatar: { type: String, default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' }
   },

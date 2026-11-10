@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, User, ShieldCheck } from 'lucide-react';
 import { API_BASE_URL } from '../api/config';
+import Logo from '../components/Logo';
 
 const Register = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -60,12 +61,8 @@ const Register = () => {
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#F84464] rounded-full mix-blend-multiply filter blur-3xl opacity-20 -mr-20 -mt-20"></div>
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#1EA83C] rounded-full mix-blend-multiply filter blur-3xl opacity-20 -ml-20 -mb-20"></div>
           
-          <div className="relative z-10 text-right">
-            <img 
-              src="https://in.bmscdn.com/webin/common/icons/logo.svg" 
-              alt="bookmyshow logo" 
-              className="w-48 mb-2"
-            />
+          <div className="relative z-10 text-right flex flex-col items-end">
+            <Logo size="lg" className="mb-3" />
             <p className="text-gray-400">Join millions of movie lovers today.</p>
           </div>
           

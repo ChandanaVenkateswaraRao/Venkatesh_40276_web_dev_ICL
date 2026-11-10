@@ -1,5 +1,6 @@
 import { X, Printer, CheckCircle, MapPin, Calendar, Clock, Armchair, CalendarPlus, XCircle } from 'lucide-react';
 import { downloadIcsCalendar } from '../utils/calendar';
+import Logo from './Logo';
 
 const TicketPassModal = ({ isOpen, onClose, booking }) => {
   if (!isOpen || !booking) return null;
@@ -57,11 +58,7 @@ const TicketPassModal = ({ isOpen, onClose, booking }) => {
           
           {/* Header Branding */}
           <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
-            <img 
-              src="https://in.bmscdn.com/webin/common/icons/logo.svg" 
-              alt="BookMyShow" 
-              className="h-8 w-auto" 
-            />
+            <Logo variant="dark" size="sm" />
             {isCancelled ? (
               <div className="flex items-center gap-1 text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full text-xs font-bold border border-rose-200">
                 <XCircle className="w-3.5 h-3.5" />

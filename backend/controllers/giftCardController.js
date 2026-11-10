@@ -189,7 +189,7 @@ const checkCardBalance = async (req, res, next) => {
       initialAmount: 500,
       cardNumber: cardNumber,
       validTill: '31 Dec 2027',
-      themeName: 'BookMyShow All-Access Voucher'
+      themeName: 'BookMyTicket All-Access Voucher'
     });
   } catch (error) {
     next(error);
@@ -266,7 +266,7 @@ const redeemGiftCard = async (req, res, next) => {
 
       return res.status(200).json({
         success: true,
-        message: `₹${creditedAmount} credited successfully to your BookMyShow wallet.`,
+        message: `₹${creditedAmount} credited successfully to your BookMyTicket wallet.`,
         creditedAmount,
         walletBalance: user.walletBalance,
         transaction
@@ -293,7 +293,7 @@ const redeemGiftCard = async (req, res, next) => {
       },
       recipientName: user.name || 'Valued Customer',
       recipientEmail: user.email || '',
-      senderName: 'BookMyShow Gifting Desk',
+      senderName: 'BookMyTicket Gifting Desk',
       message: 'Gift voucher redeemed to wallet',
       isRedeemed: true,
       redeemedBy: user._id,
@@ -319,7 +319,7 @@ const redeemGiftCard = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: `₹${redeemAmount} credited successfully to your BookMyShow wallet.`,
+      message: `₹${redeemAmount} credited successfully to your BookMyTicket wallet.`,
       creditedAmount: redeemAmount,
       walletBalance: user.walletBalance,
       transaction

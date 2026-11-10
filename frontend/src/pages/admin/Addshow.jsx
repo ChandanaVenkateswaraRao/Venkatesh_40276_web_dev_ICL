@@ -683,7 +683,7 @@ const Addshow = () => {
             </div>
 
             <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-800 font-medium">
-              Publishing this showtime will immediately link the movie to <strong>{scheduleSelectedTheater?.name || 'this theater'}</strong> and make it visible on the BookMyShow user screen in <strong>{scheduleSelectedTheater?.city || 'the selected city'}</strong>.
+              Publishing this showtime will immediately link the movie to <strong>{scheduleSelectedTheater?.name || 'this theater'}</strong> and make it visible on the BookMyTicket user screen in <strong>{scheduleSelectedTheater?.city || 'the selected city'}</strong>.
             </div>
 
             <button

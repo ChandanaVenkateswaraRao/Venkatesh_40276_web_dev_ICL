@@ -30,7 +30,7 @@ const platformPillars = [
   {
     icon: Wallet,
     title: 'Frictionless Digital Wallet',
-    desc: 'Integrated BookMyShow Wallet with real Razorpay gift card vouchers, offering zero-surcharge 1-click checkout and automated ledger tracking.'
+    desc: 'Integrated BookMyTicket Wallet with real Razorpay gift card vouchers, offering zero-surcharge 1-click checkout and automated ledger tracking.'
   },
   {
     icon: QrCode,

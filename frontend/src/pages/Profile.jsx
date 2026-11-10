@@ -81,7 +81,7 @@ const Profile = () => {
 
       setCancelAlert({
         type: 'success',
-        msg: res.data.msg || 'Ticket cancelled successfully! Refund has been credited to your BookMyShow Wallet.'
+        msg: res.data.msg || 'Ticket cancelled successfully! Refund has been credited to your BookMyTicket Wallet.'
       });
       setCancelModalBooking(null);
       setTimeout(() => setCancelAlert({ type: '', msg: '' }), 6000);

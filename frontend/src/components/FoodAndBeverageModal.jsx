@@ -135,7 +135,7 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, walletBalance = 0,
             <Utensils className="w-5 h-5 text-[#F84464]" />
             <div>
               <h2 className="text-lg font-bold">Grab a Bite & Review Bill</h2>
-              <p className="text-xs text-gray-300">Pre-book cinema snacks & apply BookMyShow Wallet deduction</p>
+              <p className="text-xs text-gray-300">Pre-book cinema snacks & apply BookMyTicket Wallet deduction</p>
             </div>
           </div>
           <button 
@@ -262,7 +262,7 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, walletBalance = 0,
                   <span className="font-semibold text-gray-800 text-xs">₹{donation}</span>
                 </div>
 
-                {/* BOOKMYSHOW WALLET DEDUCTION TOGGLE */}
+                {/* BOOKMYTICKET WALLET DEDUCTION TOGGLE */}
                 {walletBalance > 0 ? (
                   <div className="pt-2.5 border-t">
                     <div className={`p-3 rounded-2xl border transition-all ${
@@ -303,7 +303,7 @@ const FoodAndBeverageModal = ({ isOpen, onClose, ticketTotal, walletBalance = 0,
                   <div className="pt-2 border-t text-[11px] text-gray-400 flex items-center justify-between">
                     <span className="flex items-center gap-1">
                       <Wallet className="w-3 h-3 text-gray-400" />
-                      BookMyShow Wallet:
+                      BookMyTicket Wallet:
                     </span>
                     <span>₹0 (No Balance)</span>
                   </div>

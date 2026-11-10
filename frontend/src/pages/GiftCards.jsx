@@ -105,7 +105,7 @@ const cardThemes = [
 const presetAmounts = [250, 500, 1000, 2000, 5000];
 
 const messagePresets = [
-  'Enjoy the movies and entertainment on BookMyShow.',
+  'Enjoy the movies and entertainment on BookMyTicket.',
   'Wishing you a cinematic experience like never before.',
   'Celebrate the moment with blockbusters and popcorn on me.',
   'A special cinema treat for an extraordinary person.'
@@ -113,16 +113,16 @@ const messagePresets = [
 
 const faqs = [
   {
-    q: 'Where can I redeem my BookMyShow Gift Card?',
-    a: 'BookMyShow Gift Cards are accepted across 5,000+ screens nationwide, including PVR, INOX, Cinepolis, Miraj, and standalone cinemas, as well as for events, plays, sports tickets, and online food & beverage orders.'
+    q: 'Where can I redeem my BookMyTicket Gift Card?',
+    a: 'BookMyTicket Gift Cards are accepted across 5,000+ screens nationwide, including PVR, INOX, Cinepolis, Miraj, and standalone cinemas, as well as for events, plays, sports tickets, and online food & beverage orders.'
   },
   {
     q: 'Can a gift card be redeemed multiple times?',
     a: 'Yes. If your total ticket transaction is less than the gift card balance, the remaining amount remains safe on your card for future bookings until the 12-month validity expires.'
   },
   {
-    q: 'How does redeeming to BookMyShow Wallet work?',
-    a: 'Simply enter the 16-digit card number and 4-digit PIN in the "Redeem to Wallet" tab. The entire face value is immediately credited to your BookMyShow cash wallet with zero deduction fees.'
+    q: 'How does redeeming to BookMyTicket Wallet work?',
+    a: 'Simply enter the 16-digit card number and 4-digit PIN in the "Redeem to Wallet" tab. The entire face value is immediately credited to your BookMyTicket cash wallet with zero deduction fees.'
   },
   {
     q: 'What if the ticket price is greater than the gift card value?',
@@ -233,9 +233,9 @@ const GiftCards = () => {
         key: razorpayKey,
         amount: order.amount,
         currency: order.currency || 'INR',
-        name: 'BookMyShow Gift Cards',
+        name: 'BookMyTicket Gift Cards',
         description: `${selectedTheme.name} Voucher (INR ${currentAmount} x ${quantity})`,
-        image: 'https://in.bmscdn.com/webin/common/icons/logo.svg',
+        image: '/logo.svg',
         order_id: order.id,
         handler: async function (response) {
           try {
@@ -407,7 +407,7 @@ const GiftCards = () => {
           balance: match.amount,
           status: 'Active & Verified',
           validTill: match.validTill || '31 Dec 2027',
-          themeName: match.theme?.name || 'BookMyShow Gift Card'
+          themeName: match.theme?.name || 'BookMyTicket Gift Card'
         });
       } else {
         setBalanceError(err.response?.data?.message || 'Invalid Gift Card number or 4-digit PIN. Please verify details.');
@@ -444,7 +444,7 @@ const GiftCards = () => {
           {/* Subtle Metallic Micro-Texture & Watermark */}
           <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]"></div>
           <div className="absolute -right-8 -bottom-8 select-none pointer-events-none opacity-5 font-black text-6xl tracking-widest text-white uppercase transform rotate-[-12deg]">
-            {theme.watermark || 'BOOKMYSHOW'}
+            {theme.watermark || 'BOOKMYTICKET'}
           </div>
 
           {!isFlipped ? (
@@ -454,11 +454,11 @@ const GiftCards = () => {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="h-7 w-7 rounded-lg bg-[#F84464] flex items-center justify-center font-black text-white text-xs tracking-tight shadow-md border border-white/20">
-                    BMS
+                    BMT
                   </div>
                   <div>
                     <span className="font-extrabold text-base tracking-tight text-white block leading-none">
-                      book<span className="text-[#F84464]">my</span>show
+                      book<span className="text-[#F84464]">my</span>ticket
                     </span>
                     <span className="text-[8px] tracking-[0.25em] uppercase text-gray-300 font-semibold block mt-0.5">
                       {theme.edition}
@@ -581,10 +581,10 @@ const GiftCards = () => {
               <div className="flex items-end justify-between pt-2 border-t border-white/10">
                 <div className="max-w-[70%]">
                   <p className="text-[8px] text-gray-400 leading-tight">
-                    Issued by BookMyShow under Prepaid Payment Instrument guidelines. Valid for cinema ticket booking, theatre, events, and concession counters across India.
+                    Issued by BookMyTicket under Prepaid Payment Instrument guidelines. Valid for cinema ticket booking, theatre, events, and concession counters across India.
                   </p>
                   <p className="text-[8px] text-gray-400 mt-1">
-                    Customer Helpline: 022-61445050 | help@bookmyshow.com
+                    Customer Helpline: 022-61445050 | help@bookmyticket.com
                   </p>
                 </div>
                 <div className="text-right flex flex-col items-end">
@@ -624,7 +624,7 @@ const GiftCards = () => {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-300 text-xs font-semibold mb-3">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#F84464]" />
-                BookMyShow Official E-Gift Vouchers & Cash Wallet
+                BookMyTicket Official E-Gift Vouchers & Cash Wallet
               </div>
 
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2 text-white">
@@ -632,7 +632,7 @@ const GiftCards = () => {
               </h1>
 
               <p className="text-gray-400 text-xs sm:text-sm max-w-xl leading-relaxed">
-                Send official digital movie vouchers with zero convenience fees. Redeemable across 5,000+ screens nationwide or credited directly into your BookMyShow Cash Wallet.
+                Send official digital movie vouchers with zero convenience fees. Redeemable across 5,000+ screens nationwide or credited directly into your BookMyTicket Cash Wallet.
               </p>
             </div>
 
@@ -644,7 +644,7 @@ const GiftCards = () => {
                     <div className="w-8 h-8 rounded-xl bg-[#F84464] flex items-center justify-center text-white shadow-sm">
                       <Wallet className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-bold text-gray-200 uppercase tracking-wider">BookMyShow Wallet</span>
+                    <span className="text-xs font-bold text-gray-200 uppercase tracking-wider">BookMyTicket Wallet</span>
                   </div>
                   <button
                     onClick={fetchWallet}
@@ -687,7 +687,7 @@ const GiftCards = () => {
                 <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-2 text-[#F84464]">
                   <Wallet className="w-5 h-5" />
                 </div>
-                <h4 className="text-sm font-bold text-white">BookMyShow Wallet</h4>
+                <h4 className="text-sm font-bold text-white">BookMyTicket Wallet</h4>
                 <p className="text-[11px] text-gray-400 mt-1 mb-3">Sign in to redeem vouchers directly to your cash wallet</p>
                 <button
                   onClick={() => navigate('/login')}
@@ -1116,7 +1116,7 @@ const GiftCards = () => {
               </div>
               <h2 className="text-2xl font-extrabold text-gray-900">Redeem Voucher to Wallet</h2>
               <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto leading-relaxed">
-                Add your 16-digit voucher number and 4-digit PIN. The face value will be credited directly to your BookMyShow Cash Wallet for instant 1-click movie booking.
+                Add your 16-digit voucher number and 4-digit PIN. The face value will be credited directly to your BookMyTicket Cash Wallet for instant 1-click movie booking.
               </p>
             </div>
 
@@ -1145,7 +1145,7 @@ const GiftCards = () => {
               <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl mb-6 flex items-center justify-between text-xs text-amber-900">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Please sign in to your BookMyShow account to credit money to your wallet.</span>
+                  <span>Please sign in to your BookMyTicket account to credit money to your wallet.</span>
                 </div>
                 <button
                   onClick={() => navigate('/login')}
@@ -1244,7 +1244,7 @@ const GiftCards = () => {
                 ) : (
                   <>
                     <Wallet className="w-4 h-4" />
-                    <span>Redeem to BookMyShow Wallet</span>
+                    <span>Redeem to BookMyTicket Wallet</span>
                   </>
                 )}
               </button>
@@ -1276,7 +1276,7 @@ const GiftCards = () => {
               </div>
               <h2 className="text-2xl font-extrabold text-gray-900">Check Gift Card Balance</h2>
               <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto leading-relaxed">
-                Enter your 16-digit BookMyShow Gift Card number and 4-digit PIN to check real-time available balance and expiration date.
+                Enter your 16-digit BookMyTicket Gift Card number and 4-digit PIN to check real-time available balance and expiration date.
               </p>
             </div>
 
@@ -1388,7 +1388,7 @@ const GiftCards = () => {
           <div className="text-center mb-8">
             <span className="text-xs font-bold uppercase tracking-wider text-[#F84464]">Official Assurance</span>
             <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
-              Why Choose BookMyShow Entertainment Vouchers
+              Why Choose BookMyTicket Entertainment Vouchers
             </h3>
           </div>
 
@@ -1424,7 +1424,7 @@ const GiftCards = () => {
               <div>
                 <h4 className="font-bold text-sm text-gray-900 mb-1">Instant Wallet Rollover</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Transfer the entire face value straight into your BookMyShow cash wallet for one-tap express checkout anytime.
+                  Transfer the entire face value straight into your BookMyTicket cash wallet for one-tap express checkout anytime.
                 </p>
               </div>
             </div>
@@ -1448,7 +1448,7 @@ const GiftCards = () => {
 
           <div className="flex items-center gap-3 shrink-0">
             <a
-              href="mailto:corporatesales@bookmyshow.com?subject=Corporate%20Gift%20Cards%20Enquiry"
+              href="mailto:corporatesales@bookmyticket.com?subject=Corporate%20Gift%20Cards%20Enquiry"
               className="bg-white hover:bg-gray-100 text-gray-900 px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm"
             >
               <Mail className="w-4 h-4 text-[#F84464]" />

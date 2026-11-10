@@ -353,9 +353,9 @@ const Booking = () => {
         key: razorpayKey,
         amount: order.amount,
         currency: order.currency || 'INR',
-        name: 'bookmyshow',
+        name: 'bookmyticket',
         description: `${movie.title} • Seats: ${selectedSeats.join(', ')}`,
-        image: 'https://in.bmscdn.com/webin/common/icons/logo.svg',
+        image: '/logo.svg',
         order_id: order.id,
         handler: async function (response) {
           try {

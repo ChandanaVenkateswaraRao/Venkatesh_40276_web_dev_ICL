@@ -172,16 +172,16 @@ router.post('/inquiry', async (req, res) => {
 
     // Regional account managers
     const managers = {
-      'Bengaluru': { name: 'Pooja Hegde', phone: '+91 80 4455 6677', email: 'blr-corporate@bookmyshow.icl', whatsapp: '+918044556677', role: 'Regional Corporate Director (Bengaluru)' },
-      'Mumbai': { name: 'Kavita Chawla', phone: '+91 22 6677 8899', email: 'mumbai-corporate@bookmyshow.icl', whatsapp: '+912266778899', role: 'Senior Enterprise Solutions Partner (Mumbai)' },
-      'Hyderabad': { name: 'Karthik Rao', phone: '+91 40 3344 5566', email: 'hyd-corporate@bookmyshow.icl', whatsapp: '+914033445566', role: 'Corporate Screening Lead (Hyderabad & AP)' },
-      'Delhi-NCR': { name: 'Ananya Sharma', phone: '+91 11 2233 4455', email: 'delhi-corporate@bookmyshow.icl', whatsapp: '+911122334455', role: 'Key Accounts Director (Delhi-NCR)' }
+      'Bengaluru': { name: 'Pooja Hegde', phone: '+91 80 4455 6677', email: 'blr-corporate@bookmyticket.icl', whatsapp: '+918044556677', role: 'Regional Corporate Director (Bengaluru)' },
+      'Mumbai': { name: 'Kavita Chawla', phone: '+91 22 6677 8899', email: 'mumbai-corporate@bookmyticket.icl', whatsapp: '+912266778899', role: 'Senior Enterprise Solutions Partner (Mumbai)' },
+      'Hyderabad': { name: 'Karthik Rao', phone: '+91 40 3344 5566', email: 'hyd-corporate@bookmyticket.icl', whatsapp: '+914033445566', role: 'Corporate Screening Lead (Hyderabad & AP)' },
+      'Delhi-NCR': { name: 'Ananya Sharma', phone: '+91 11 2233 4455', email: 'delhi-corporate@bookmyticket.icl', whatsapp: '+911122334455', role: 'Key Accounts Director (Delhi-NCR)' }
     };
 
     const chosenManager = managers[city] || {
       name: 'Vikramaditya Sen',
       phone: '+91 91234 56789',
-      email: 'national-corporate@bookmyshow.icl',
+      email: 'national-corporate@bookmyticket.icl',
       whatsapp: '+919123456789',
       role: 'National Head - Corporate Client Experience'
     };

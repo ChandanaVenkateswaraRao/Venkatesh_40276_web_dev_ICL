@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Logo from './Logo';
 import { Search, ChevronDown, Menu, User, Building2 } from 'lucide-react';
 import axios from 'axios';
 import { API_BASE_URL } from '../api/config';
@@ -75,11 +76,7 @@ const Navbar = () => {
           {/* Left Side: Logo and Search */}
           <div className="flex items-center gap-4 lg:gap-6 w-full max-w-[70%]">
             <Link to="/" className="flex items-center flex-shrink-0">
-              <img 
-                src="https://in.bmscdn.com/webin/common/icons/logo.svg" 
-                alt="bookmyshow logo" 
-                className="w-[115px] h-auto"
-              />
+              <Logo size="md" />
             </Link>
             
             <div className="hidden md:flex bg-white rounded flex-1 h-[40px] items-center px-3 gap-2 relative">

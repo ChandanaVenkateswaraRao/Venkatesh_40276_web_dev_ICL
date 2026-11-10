@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Building2, Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import { API_BASE_URL } from '../../api/config';
+import Logo from '../../components/Logo';
 
 const PartnerLogin = () => {
   const navigate = useNavigate();
@@ -42,11 +43,7 @@ const PartnerLogin = () => {
       <header className="px-6 py-5 border-b border-slate-800 bg-[#0F172A]">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <img 
-              src="https://in.bmscdn.com/webin/common/icons/logo.svg" 
-              alt="BookMyShow" 
-              className="h-8 w-auto filter brightness-0 invert"
-            />
+            <Logo size="sm" />
             <span className="hidden sm:inline-block text-xs font-semibold uppercase tracking-wider text-slate-400 border-l border-slate-700 pl-3">
               Partner Portal
             </span>
@@ -134,7 +131,7 @@ const PartnerLogin = () => {
 
             <div className="mt-6 pt-5 border-t border-slate-100 text-center">
               <p className="text-xs text-slate-500">
-                Theater partner onboarding is managed by BookMyShow administration.
+                Theater partner onboarding is managed by BookMyTicket administration.
               </p>
               <p className="text-xs text-slate-400 mt-1">
                 Need access? Contact your regional theater operations manager.
@@ -148,7 +145,7 @@ const PartnerLogin = () => {
 
       {/* Simple Footer */}
       <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-800">
-        BookMyShow Cinema Partner Console &bull; Secure Box Office Access
+        BookMyTicket Cinema Partner Console &bull; Secure Box Office Access
       </footer>
 
     </div>

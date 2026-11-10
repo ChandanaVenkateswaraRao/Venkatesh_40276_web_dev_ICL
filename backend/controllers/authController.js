@@ -19,12 +19,12 @@ const transporter = nodemailer.createTransport({
 // Utility to send email with custom template
 const sendOTPEmail = async (email, name, otp) => {
   const mailOptions = {
-    from: `"bookmyshow" <${process.env.SMTP_USER}>`,
+    from: `"bookmyticket" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: 'Verify Your Email Address - bookmyshow',
+    subject: 'Verify Your Email Address - bookmyticket',
     html: `
       <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-        <h2 style="color: #F84464; text-align: center;">Welcome to bookmyshow, ${name}!</h2>
+        <h2 style="color: #F84464; text-align: center;">Welcome to bookmyticket, ${name}!</h2>
         <p style="color: #333; font-size: 16px;">We are thrilled to have you. Please verify your email address to complete your registration.</p>
         <div style="background-color: #f9f9f9; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
           <p style="margin: 0; font-size: 14px; color: #777;">Your One-Time Password (OTP) is:</p>
@@ -426,7 +426,7 @@ const cancelBooking = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      msg: `Booking cancelled successfully! ₹${refundAmount} has been refunded to your BookMyShow Wallet.`,
+      msg: `Booking cancelled successfully! ₹${refundAmount} has been refunded to your BookMyTicket Wallet.`,
       booking,
       walletBalance: user.walletBalance
     });

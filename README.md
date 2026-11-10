@@ -1,4 +1,4 @@
-# BookMyShow - Full-Stack Cinema Ticket Booking & Multi-Tenant Theater Management Platform
+# BookMyTicket - Full-Stack Cinema Ticket Booking & Multi-Tenant Theater Management Platform
 
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -9,7 +9,7 @@
 [![Socket.io](https://img.shields.io/badge/Socket.IO-4.8-010101?logo=socket.io&logoColor=white)](https://socket.io/)
 [![Razorpay](https://img.shields.io/badge/Razorpay-Payment%20Gateway-0C2340?logo=razorpay&logoColor=blue)](https://razorpay.com/)
 
-A production-grade, full-stack cinema ticketing ecosystem inspired by BookMyShow. The platform features an end-to-end customer booking flow, distributed real-time seat locking concurrency, a dedicated multi-tenant theater partner dashboard with an architectural auditorium seating layout studio, BMS wallet balance with split-payment checkout, 2-hour pre-show ticket cancellation with instant refunds, and a centralized administrative desk.
+A production-grade, full-stack cinema ticketing ecosystem modeled as BookMyTicket. The platform features an end-to-end customer booking flow, distributed real-time seat locking concurrency, a dedicated multi-tenant theater partner dashboard with an architectural auditorium seating layout studio, BMT wallet balance with split-payment checkout, 2-hour pre-show ticket cancellation with instant refunds, and a centralized administrative desk.
 
 ---
 
@@ -77,7 +77,7 @@ flowchart TD
 - **Continuous Seating Grid**: Seating layouts maintain continuous seat numbering (e.g. `1, 2, 3, [walkway], 4, 5...`) so seat numbers match the physical cinema rows without skipping indices.
 - **Grab-a-Bite Food & Beverage Integration**: Add popcorn, snacks, and beverages to tickets prior to checkout.
 - **Split Payment & BMS Wallet Engine**: 
-  - Pay 100% using BookMyShow Wallet balance without touching external gateways.
+  - Pay 100% using BookMyTicket Wallet balance without touching external gateways.
   - Partial wallet split: Pay part via wallet and remainder via Razorpay (UPI, Credit/Debit cards, NetBanking).
 - **Official E-Ticket & Calendar Sync**: Confirmed bookings generate a scannable QR ticket pass with print/PDF styling and 1-click `.ics` calendar sync for Apple and Google Calendar.
 - **2-Hour Pre-Show Cancellation**:
@@ -315,7 +315,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": true,
-  "msg": "Booking cancelled successfully! ₹350 has been refunded to your BookMyShow Wallet.",
+  "msg": "Booking cancelled successfully! ₹350 has been refunded to your BookMyTicket Wallet.",
   "booking": {
     "_id": "6728e9301293ab3450",
     "status": "cancelled",
@@ -438,7 +438,7 @@ cp .env.example .env
 Configure your `.env` variables:
 ```env
 PORT=5000
-MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/bookmyshow?retryWrites=true&w=majority
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/bookmyticket?retryWrites=true&w=majority
 JWT_SECRET=your_super_secret_jwt_key_32_chars_long
 RAZORPAY_KEY_ID=rzp_test_your_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_secret_key

@@ -444,7 +444,7 @@ const Offers = () => {
           <div className="text-center mb-8">
             <span className="text-xs font-bold uppercase tracking-wider text-[#F84464]">Quick Guide</span>
             <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
-              How to Apply Offers on BookMyShow
+              How to Apply Offers on BookMyTicket
             </h3>
           </div>
 
