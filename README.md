@@ -1,5 +1,8 @@
 # BookMyTicket - Full-Stack Cinema Ticket Booking & Multi-Tenant Theater Management Platform
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel_Frontend-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://venkatesh-40276-web-dev-icl.vercel.app/)
+[![API Backend](https://img.shields.io/badge/API_Backend-Render_Cloud-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://book-my-ticket-3brf.onrender.com)
+
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
@@ -13,18 +16,27 @@ A production-grade, full-stack cinema ticketing ecosystem modeled as BookMyTicke
 
 ---
 
+### 🌐 Live Deployment Links
+- **Frontend Web Application (Vercel):** [https://venkatesh-40276-web-dev-icl.vercel.app/](https://venkatesh-40276-web-dev-icl.vercel.app/)
+- **Backend API & Real-Time Engine (Render):** [https://book-my-ticket-3brf.onrender.com](https://book-my-ticket-3brf.onrender.com)
+- **API Base URL:** [https://book-my-ticket-3brf.onrender.com/api](https://book-my-ticket-3brf.onrender.com/api)
+
+---
+
 ## Table of Contents
 
-1. [Architectural Overview](#architectural-overview)
-2. [Key Features](#key-features)
-3. [Technology Stack](#technology-stack)
-4. [Data Design & Schemas](#data-design--schemas)
-5. [Real-Time Seat Concurrency Engine](#real-time-seat-concurrency-engine)
-6. [API Documentation](#api-documentation)
-7. [Installation & Local Setup](#installation--local-setup)
-8. [Database Seeding](#database-seeding)
-9. [Deployment Guide](#deployment-guide)
-10. [Default Credentials & Testing](#default-credentials--testing)
+1. [Live Deployment Links](#-live-deployment-links)
+2. [Architectural Overview](#architectural-overview)
+3. [Key Features](#key-features)
+4. [Platform Screenshots & Visual Showcase](#platform-screenshots--visual-showcase)
+5. [Technology Stack](#technology-stack)
+6. [Data Design & Schemas](#data-design--schemas)
+7. [Real-Time Seat Concurrency Engine](#real-time-seat-concurrency-engine)
+8. [API Documentation](#api-documentation)
+9. [Installation & Local Setup](#installation--local-setup)
+10. [Database Seeding](#database-seeding)
+11. [Deployment Guide](#deployment-guide)
+12. [Default Credentials & Testing](#default-credentials--testing)
 
 ---
 
@@ -102,6 +114,68 @@ flowchart TD
 - **Revenue Analytics**: Interactive 7-day revenue charts and admission volume tracking powered by Recharts.
 - **Theater Verification**: Register new cinemas, edit screen capacities, configure amenities, and reset partner passwords.
 - **Traffic & Concurrency Simulator**: Benchmark distributed seat locks by simulating live concurrent buyers and monitoring telemetry.
+
+---
+
+## Platform Screenshots & Visual Showcase
+
+### 1. Customer & User Experience Portal
+
+#### 🎬 Home Page & Movie Discovery
+Browse featured cinematic releases, city-based screenings (Hyderabad, Bengaluru, Mumbai, Delhi-NCR, etc.), instant movie search filters, and promotional banners.
+![Home Page & Movie Catalog](ss/user-2.png)
+
+#### 📽️ Movie Details & Showtime Selection
+Comprehensive film metadata, certification (UA, Action), language badges, synopsis, working YouTube trailer modal, and direct booking CTA.
+![Movie Details & Showtime Selection](ss/user-3.png)
+
+#### 💺 Real-Time Auditorium Seating & Distributed Concurrency HUD
+Curved cinema screen orientation, distinct seating tiers (Royal Recliner Lounge, Prime Circle, Classic), live buyer presence counter, and real-time 8-minute TTL seat reservation countdown.
+![Real-Time Auditorium Seating & Concurrency HUD](ss/user-4.png)
+
+#### 💳 Gift Cards & BookMyTicket Cash Wallet Hub
+Customizable digital movie gift vouchers with real-time 3D card preview, instant wallet balance rollover, zero-fee voucher redemptions, and real-time balance checking tools.
+![Gift Cards & Cash Wallet Hub](ss/user-5.png)
+
+#### 🔐 Customer Authentication & Sign In
+Secure customer login and registration portal featuring responsive cinema branding, password visibility toggles, and email OTP verification.
+![Customer Authentication & Sign In](ss/user-1.png)
+
+---
+
+### 2. Multi-Tenant Theater Partner Portal
+
+#### 🏢 Theater Partner Portal Login
+Dedicated, isolated box office access portal for verified cinema owners and multiplex operations managers.
+![Theater Partner Login Portal](ss/partner-1.png)
+
+#### 📊 Partner Dashboard — Showtimes & Dynamic Pricing
+Executive box office telemetry (Active Shows, Tickets Booked, Gross Revenue, Floor Occupancy %), active showtime schedules with projection formats (Dolby Atmos, Barco 4K), and seat tier rate configurations.
+![Partner Showtimes & Dynamic Pricing](ss/partner-2.png)
+
+#### 📐 Architectural Auditorium Seating Layout Studio
+Interactive visual seating layout studio enabling cinema owners to customize auditorium dimensions (up to 26 rows × 30 columns), toggle aisle walkways with continuous seat numbering, and assign row tiers (Recliner, Prime, Classic).
+![Auditorium Seating Layout Studio](ss/partner-3.png)
+
+#### 🎬 Partner Movie Catalog Provisioning
+Direct cinema catalog manager allowing theater partners to provision movie titles, languages, genres, poster URLs, and official YouTube trailer links.
+![Partner Movie Catalog Provisioning](ss/partner-4.png)
+
+---
+
+### 3. Central Administration Desk
+
+#### 📈 Central Operations Overview
+High-level operational control center displaying gross box office collections, platform admissions volume, registered partner multiplexes, active catalog titles, real-time transaction feed, and quick action shortcuts.
+![Central Operations Overview Dashboard](ss/admin-1.png)
+
+#### 🏛️ Cinema Theater Onboarding Wizard
+Multi-step modal for registering verified cinema properties, configuring single-screen or multiplex auditorium capacities, audio/video specifications, and generating partner credentials.
+![Cinema Theater Onboarding Wizard](ss/admin-2.png)
+
+#### 🗓️ Show Programming & Scheduling Desk
+Central programming scheduler enabling administrators to assign movies to partner multiplex auditoriums across release cities.
+![Central Show Programming Desk](ss/admin-3.png)
 
 ---
 
@@ -384,7 +458,7 @@ Authorization: Bearer <token>
 | `POST` | `/api/giftcards/orders` | Public | Create Razorpay order to purchase digital gift cards |
 | `POST` | `/api/giftcards/verify` | Public | Verify payment and issue unique 16-digit card number and 4-digit PIN |
 | `POST` | `/api/giftcards/check-balance` | Public | Check status and unredeemed balance of any gift card |
-| `POST` | `/api/giftcards/redeem` | Required | Redeem gift card value into authenticated user's BMS Wallet balance |
+| `POST` | `/api/giftcards/redeem` | Required | Redeem gift card value into authenticated user's BookMyTicket Wallet balance |
 | `GET` | `/api/wallet/balance` | Required | Fetch current wallet balance and full ledger transaction history |
 
 ---
@@ -505,23 +579,24 @@ npm run seed
 
 ## Deployment Guide
 
-### Deploy Backend (e.g. Render / Railway / Heroku)
+### Deploy Backend (Render)
 1. Push repository to GitHub.
 2. Create a new **Web Service** on [Render](https://render.com/) pointing to the root directory with subfolder `backend`.
 3. Set build and start commands:
    - **Build Command**: `npm install`
    - **Start Command**: `node server.js`
 4. In the Environment section, add all variables from `backend/.env.example`.
-5. Note your deployed URL (e.g. `https://book-my-ticket-3brf.onrender.com`).
+5. **Live Backend API**: [https://book-my-ticket-3brf.onrender.com](https://book-my-ticket-3brf.onrender.com)
 
-### Deploy Frontend (e.g. Vercel)
+### Deploy Frontend (Vercel)
 1. Import repository in [Vercel](https://vercel.com/).
 2. Set **Root Directory** to `frontend`.
 3. Add environment variables:
-   - `VITE_BACKEND_URL`: `https://your-backend-url.onrender.com`
-   - `VITE_API_URL`: `https://your-backend-url.onrender.com/api`
+   - `VITE_BACKEND_URL`: `https://book-my-ticket-3brf.onrender.com`
+   - `VITE_API_URL`: `https://book-my-ticket-3brf.onrender.com/api`
    - `VITE_RAZORPAY_KEY_ID`: `your_razorpay_key_id`
 4. Deploy. Vercel will run `vite build` and serve the optimized client build.
+5. **Live Web App**: [https://venkatesh-40276-web-dev-icl.vercel.app/](https://venkatesh-40276-web-dev-icl.vercel.app/)
 
 ---
 
@@ -536,7 +611,7 @@ npm run seed
 | **Auditorium Studio** | `/partner/layout` | Design custom rows, columns, walkway aisles, and tiers |
 | **Gate Security Scanner** | `/partner/scanner` | Camera QR scanner to validate customer tickets |
 | **Operations Desk (Admin)**| `/admin` | High-level metrics, revenue charts, theater management |
-| **Gift Card Store** | `/gift-cards` | Purchase digital gift cards and redeem into BMS Wallet |
+| **Gift Card Store** | `/gift-cards` | Purchase digital gift cards and redeem into BookMyTicket Wallet |
 
 ---
 
