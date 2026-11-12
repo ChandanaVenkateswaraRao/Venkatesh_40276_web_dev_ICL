@@ -18,8 +18,7 @@ A production-grade, full-stack cinema ticketing ecosystem modeled as BookMyTicke
 
 ### 🌐 Live Deployment Links
 - **Frontend Web Application (Vercel):** [https://venkatesh-40276-web-dev-icl.vercel.app/](https://venkatesh-40276-web-dev-icl.vercel.app/)
-- **Backend API & Real-Time Engine (Render):** [https://book-my-ticket-3brf.onrender.com](https://book-my-ticket-3brf.onrender.com)
-- **API Base URL:** [https://book-my-ticket-3brf.onrender.com/api](https://book-my-ticket-3brf.onrender.com/api)
+
 
 ---
 
